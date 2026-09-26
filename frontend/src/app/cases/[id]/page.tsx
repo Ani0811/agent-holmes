@@ -23,16 +23,21 @@ import {
   ShieldCheck,
   GitBranch,
   Terminal,
+  Activity,
+  Layers,
+  Sparkles,
+  Clock,
+  ChevronRight,
 } from "lucide-react";
 
 const PHASES = [
-  { key: "discovery", label: "Discovery" },
-  { key: "search", label: "Search" },
-  { key: "evidence", label: "Evidence" },
-  { key: "hypothesis", label: "Hypothesis" },
-  { key: "patch", label: "Patch" },
-  { key: "verify", label: "Verify" },
-  { key: "report", label: "Resolution" },
+  { key: "discovery", label: "Discovery", desc: "Sandbox & Index" },
+  { key: "search", label: "Code Search", desc: "AST & Symbol Scan" },
+  { key: "evidence", label: "Evidence", desc: "Offending Citations" },
+  { key: "hypothesis", label: "Hypothesis", desc: "Root Cause Lab" },
+  { key: "patch", label: "Patch", desc: "Diff Synthesis" },
+  { key: "verify", label: "Verify", desc: "Automated Tests" },
+  { key: "report", label: "Resolution", desc: "Case Solved" },
 ];
 
 export default function CaseInvestigationPage({
@@ -48,8 +53,17 @@ export default function CaseInvestigationPage({
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("evidence");
   const [viewMode, setViewMode] = useState<"investigation" | "resolution">("investigation");
+  const [secondsElapsed, setSecondsElapsed] = useState(0);
 
   const { events, isConnected, phase } = useInvestigationStream(caseId);
+
+  // Timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSecondsElapsed((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchFullCase = async () => {
     try {
@@ -76,7 +90,7 @@ export default function CaseInvestigationPage({
     fetchFullCase();
   }, [caseId]);
 
-  // When new events stream in, refresh artifacts periodically
+  // When events stream in, refresh artifacts
   useEffect(() => {
     if (events.length > 0) {
       const latest = events[events.length - 1];
@@ -95,35 +109,40 @@ export default function CaseInvestigationPage({
     }
   }, [events.length]);
 
-  const currentPhaseIndex = PHASES.findIndex(
-    (p) => p.key === (phase || caseData?.status)
-  );
+  const activePhaseKey = phase || caseData?.status || "discovery";
+  const currentPhaseIndex = PHASES.findIndex((p) => p.key === activePhaseKey);
+
+  const formatTimer = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}s`;
+  };
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-cyber-grid bg-[#080c16] text-slate-100 flex flex-col selection:bg-sky-500 selection:text-slate-950">
       {/* Top Console Bar */}
-      <header className="border-b border-slate-800 bg-[#080d1a] px-6 py-3 flex items-center justify-between sticky top-0 z-50">
+      <header className="border-b border-slate-800/80 bg-[#080c16]/90 backdrop-blur-md px-6 py-3 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <Link href="/">
             <Button
               variant="outline"
               size="sm"
-              className="h-8 border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-300"
+              className="h-8 border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-slate-300 text-xs font-mono"
             >
-              <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Cases
+              <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Back to Dossiers
             </Button>
           </Link>
           <div className="h-4 w-px bg-slate-800" />
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs text-sky-400 font-bold">{caseId}</span>
+            <span className="font-mono text-xs text-sky-400 font-bold tracking-wider">{caseId}</span>
             {caseData && (
               <Badge
                 className={
                   caseData.status === "solved"
-                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-[10px] font-mono font-bold"
                     : caseData.status === "failed"
-                    ? "bg-rose-500/20 text-rose-400 border-rose-500/40"
-                    : "bg-amber-500/20 text-amber-400 border-amber-500/40 animate-pulse"
+                    ? "bg-rose-500/20 text-rose-400 border-rose-500/40 text-[10px] font-mono font-bold"
+                    : "bg-amber-500/20 text-amber-400 border-amber-500/40 animate-pulse text-[10px] font-mono font-bold"
                 }
               >
                 {caseData.status.toUpperCase()}
@@ -132,28 +151,36 @@ export default function CaseInvestigationPage({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Action Controls & Mode Switcher */}
+        <div className="flex items-center gap-3">
+          {/* Live timer */}
+          <div className="hidden sm:flex items-center gap-1.5 font-mono text-xs text-slate-400 bg-slate-900/60 border border-slate-800 px-3 py-1 rounded-full">
+            <Clock className="w-3.5 h-3.5 text-sky-400" />
+            <span>SESSION:</span>
+            <span className="text-slate-200 font-semibold">{formatTimer(secondsElapsed)}</span>
+          </div>
+
           {reportData && (
-            <div className="flex items-center bg-slate-900 rounded-lg p-0.5 border border-slate-800">
+            <div className="flex items-center bg-slate-900/90 rounded-lg p-0.5 border border-slate-800 font-mono text-xs">
               <button
                 onClick={() => setViewMode("resolution")}
-                className={`text-xs px-3 py-1 rounded font-medium transition-colors ${
+                className={`px-3 py-1 rounded-md transition-all ${
                   viewMode === "resolution"
-                    ? "bg-emerald-500/20 text-emerald-300 font-semibold"
+                    ? "bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                Resolution View
+                Resolution Verdict
               </button>
               <button
                 onClick={() => setViewMode("investigation")}
-                className={`text-xs px-3 py-1 rounded font-medium transition-colors ${
+                className={`px-3 py-1 rounded-md transition-all ${
                   viewMode === "investigation"
-                    ? "bg-sky-500/20 text-sky-300 font-semibold"
+                    ? "bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                Live Feed
+                Live Event Console
               </button>
             </div>
           )}
@@ -162,17 +189,17 @@ export default function CaseInvestigationPage({
             variant="outline"
             size="sm"
             onClick={fetchFullCase}
-            className="h-8 border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-300"
-            title="Refresh Case"
+            className="h-8 border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-slate-300"
+            title="Refresh Case State"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </Button>
         </div>
       </header>
 
-      {/* Phase Stepper Bar */}
-      <div className="bg-[#0b101c] border-b border-slate-800 px-6 py-2.5 overflow-x-auto">
-        <div className="max-w-6xl mx-auto flex items-center justify-between min-w-[640px] text-xs font-mono">
+      {/* Cyber Phase Stepper Bar */}
+      <div className="bg-[#0b101c] border-b border-slate-800/80 px-6 py-2.5 overflow-x-auto shadow-inner">
+        <div className="max-w-7xl mx-auto flex items-center justify-between min-w-[700px] text-xs font-mono">
           {PHASES.map((p, idx) => {
             const isCompleted = idx < currentPhaseIndex;
             const isCurrent = idx === currentPhaseIndex;
@@ -180,25 +207,34 @@ export default function CaseInvestigationPage({
             return (
               <div key={p.key} className="flex items-center gap-2">
                 <div
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
                     isCurrent
-                      ? "bg-sky-500/20 text-sky-400 border-sky-500 shadow-[0_0_12px_rgba(56,189,248,0.2)] animate-pulse"
+                      ? "bg-sky-950/60 text-sky-300 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.25)] font-bold animate-pulse"
                       : isCompleted
-                      ? "bg-emerald-950/40 text-emerald-400 border-emerald-800/80"
-                      : "bg-slate-900/40 text-slate-600 border-slate-800"
+                      ? "bg-emerald-950/40 text-emerald-400 border-emerald-800/80 font-medium"
+                      : "bg-slate-900/30 text-slate-600 border-slate-800/60"
                   }`}
                 >
-                  {isCompleted ? (
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                  ) : (
-                    <span className="w-3 text-center">{idx + 1}</span>
-                  )}
-                  <span>{p.label}</span>
+                  <span
+                    className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                      isCompleted
+                        ? "bg-emerald-500 text-slate-950"
+                        : isCurrent
+                        ? "bg-sky-400 text-slate-950"
+                        : "bg-slate-800 text-slate-500"
+                    }`}
+                  >
+                    {isCompleted ? <CheckCircle2 className="w-3 h-3" /> : idx + 1}
+                  </span>
+                  <div>
+                    <span className="block leading-tight text-[11px]">{p.label}</span>
+                  </div>
                 </div>
+
                 {idx < PHASES.length - 1 && (
                   <div
-                    className={`h-0.5 w-6 rounded ${
-                      idx < currentPhaseIndex ? "bg-emerald-700" : "bg-slate-800"
+                    className={`h-[1px] w-6 rounded transition-colors ${
+                      idx < currentPhaseIndex ? "bg-emerald-600" : "bg-slate-800"
                     }`}
                   />
                 )}
@@ -210,21 +246,23 @@ export default function CaseInvestigationPage({
 
       {/* Main Body */}
       <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
-        {/* Case Symptom Header Card */}
+        {/* Case Dossier Header Pill */}
         {caseData && (
-          <div className="p-4 rounded-lg bg-[#0c1220] border border-slate-800 text-xs flex flex-col md:flex-row md:items-center justify-between gap-3 font-mono">
-            <div className="space-y-1">
+          <div className="glass-panel p-4 rounded-xl border border-slate-800/90 text-xs flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono shadow-lg">
+            <div className="space-y-1.5 flex-1 min-w-0">
               <div className="flex items-center gap-2 text-slate-400">
-                <GitBranch className="w-3.5 h-3.5 text-sky-400" />
-                <span className="text-slate-300 font-semibold">{caseData.repo_url}</span>
+                <GitBranch className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                <span className="text-slate-200 font-semibold truncate">{caseData.repo_url}</span>
               </div>
-              <p className="text-slate-200 font-sans text-xs max-w-3xl leading-relaxed">
+              <p className="text-slate-300 font-sans text-xs leading-relaxed">
                 <span className="font-semibold text-slate-400 font-mono">SYMPTOM: </span>
                 {caseData.bug_description}
               </p>
             </div>
+
             {caseData.stack_trace && (
-              <div className="text-[11px] text-slate-500 truncate max-w-xs self-start md:self-auto bg-slate-900 px-2 py-1 rounded border border-slate-800">
+              <div className="text-[11px] text-purple-300 bg-purple-950/30 border border-purple-900/50 px-3 py-1.5 rounded-lg max-w-md truncate self-start md:self-auto shrink-0">
+                <span className="font-bold mr-1">TRACE:</span>
                 {caseData.stack_trace}
               </div>
             )}
@@ -235,49 +273,50 @@ export default function CaseInvestigationPage({
         {viewMode === "resolution" && reportData ? (
           <CaseReport report={reportData} />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[720px]">
-            {/* Left 6 cols: Live Event Stream */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[760px]">
+            {/* Left 6 cols: Live Event Stream Terminal */}
             <div className="lg:col-span-6 h-full flex flex-col">
               <InvestigationFeed events={events} isConnected={isConnected} />
             </div>
 
-            {/* Right 6 cols: Artifact Tabs */}
+            {/* Right 6 cols: Exhibit Drawer */}
             <div className="lg:col-span-6 h-full flex flex-col">
               <Tabs
+                defaultValue="evidence"
                 value={activeTab}
                 onValueChange={setActiveTab}
-                className="flex flex-col h-full bg-[#0c1220] border border-slate-800 rounded-lg overflow-hidden"
+                className="flex flex-col h-full glass-panel rounded-xl overflow-hidden border border-slate-800"
               >
-                <div className="bg-[#080d1a] border-b border-slate-800 px-3 py-2 flex items-center justify-between">
-                  <TabsList className="bg-slate-900 border border-slate-800 h-8 p-0.5">
+                <div className="bg-[#080d1a] border-b border-slate-800/80 px-3 py-2 flex items-center justify-between">
+                  <TabsList className="bg-slate-900/90 border border-slate-800 h-8 p-0.5 font-mono text-xs">
                     <TabsTrigger
                       value="evidence"
-                      className="text-xs h-7 px-2.5 data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-300"
+                      className="text-xs h-7 px-3 data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-300 data-[state=active]:font-bold"
                     >
                       Evidence ({caseData?.evidence.length || 0})
                     </TabsTrigger>
                     <TabsTrigger
                       value="hypotheses"
-                      className="text-xs h-7 px-2.5 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300"
+                      className="text-xs h-7 px-3 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 data-[state=active]:font-bold"
                     >
                       Hypotheses ({caseData?.hypotheses.length || 0})
                     </TabsTrigger>
                     <TabsTrigger
                       value="patch"
-                      className="text-xs h-7 px-2.5 data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300"
+                      className="text-xs h-7 px-3 data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 data-[state=active]:font-bold"
                     >
                       Patch ({caseData?.patches.length || 0})
                     </TabsTrigger>
                     <TabsTrigger
                       value="verification"
-                      className="text-xs h-7 px-2.5 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-300"
+                      className="text-xs h-7 px-3 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-300 data-[state=active]:font-bold"
                     >
                       Tests ({caseData?.test_results.length || 0})
                     </TabsTrigger>
                   </TabsList>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4">
+                <div className="flex-1 overflow-y-auto p-4 bg-[#0a0f1d]/50">
                   <TabsContent value="evidence" className="m-0 h-full">
                     <EvidencePanel evidence={caseData?.evidence || []} />
                   </TabsContent>
@@ -294,11 +333,11 @@ export default function CaseInvestigationPage({
                         filePaths={caseData.patches[caseData.patches.length - 1].file_paths}
                       />
                     ) : (
-                      <div className="flex flex-col items-center justify-center h-48 text-slate-500 text-xs">
-                        <FileCode className="w-8 h-8 text-slate-600 mb-2" />
-                        <p>No patches generated yet.</p>
+                      <div className="flex flex-col items-center justify-center h-56 text-slate-500 text-xs font-mono">
+                        <FileCode className="w-8 h-8 text-slate-600 mb-2 animate-bounce" />
+                        <p>No patches synthesized yet.</p>
                         <p className="text-[11px] text-slate-600 mt-1">
-                          The agent generates patches once a root cause hypothesis is confirmed.
+                          A surgical unified diff is generated once the root cause hypothesis is confirmed.
                         </p>
                       </div>
                     )}
