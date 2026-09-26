@@ -180,6 +180,7 @@ def get_case(case_id: str, session: Session = Depends(get_session)):
         bug_description=case.bug_description,
         stack_trace=case.stack_trace,
         status=case.status,
+        case_type=getattr(case, "case_type", "bug_fix") or "bug_fix",
         root_cause=case.root_cause,
         created_at=case.created_at,
         updated_at=case.updated_at,
@@ -265,10 +266,24 @@ def get_case_report(case_id: str, session: Session = Depends(get_session)):
     if getattr(case, "case_type", "bug_fix") != "repo_review":
         is_solved = is_solved and (latest_test is not None and latest_test.passed)
 
-    summary_text = (
-        case.root_cause
-        or (winning_hypo.description if winning_hypo else ("Repository review completed successfully." if getattr(case, "case_type", "bug_fix") == "repo_review" else "Investigation concluded."))
-    )
+    if case.status == CaseStatus.FAILED.value:
+        summary_text = (
+            case.root_cause
+            or "Investigation failed during repository discovery, test execution, or patch verification."
+        )
+    else:
+        summary_text = (
+            case.root_cause
+            or (
+                winning_hypo.description
+                if winning_hypo
+                else (
+                    "Repository review completed successfully."
+                    if getattr(case, "case_type", "bug_fix") == "repo_review"
+                    else "Investigation concluded."
+                )
+            )
+        )
 
     return CaseReport(
         case_id=case.case_id,

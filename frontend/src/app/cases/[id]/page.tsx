@@ -156,8 +156,24 @@ export default function CaseInvestigationPage({
     }
   }, [events.length]);
 
-  const activePhaseKey = phase || caseData?.status || "discovery";
-  const currentPhaseIndex = activePhases.findIndex((p) => p.key === activePhaseKey);
+  const currentPhaseIndex = (() => {
+    if (caseData?.status === "solved" || isSolved === true) {
+      return activePhases.length - 1; // All phases completed
+    }
+    if (phase) {
+      const idx = activePhases.findIndex((p) => p.key === phase);
+      if (idx !== -1) return idx;
+    }
+    if (caseData?.status === "failed") {
+      if (caseData.test_results && caseData.test_results.length > 0) return 5;
+      if (caseData.patches && caseData.patches.length > 0) return 4;
+      if (caseData.hypotheses && caseData.hypotheses.length > 0) return 3;
+      if (caseData.evidence && caseData.evidence.length > 0) return 2;
+      return 0; // Failed during discovery
+    }
+    const idx = activePhases.findIndex((p) => p.key === (phase || "discovery"));
+    return idx !== -1 ? idx : 0;
+  })();
 
   const formatTimer = (sec: number) => {
     const m = Math.floor(sec / 60);

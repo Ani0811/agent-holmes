@@ -216,7 +216,13 @@ class InvestigationEngine:
         except Exception as e:
             logger.exception(f"Unhandled error in investigation engine for case {case_id}: {e}")
             self.state.status = CaseStatus.FAILED.value
-            self.evidence_store.update_case_status(case_id, CaseStatus.FAILED.value)
+            error_reason = f"Investigation aborted: {str(e)}"
+            self.state.root_cause_summary = error_reason
+            self.evidence_store.update_case_status(
+                case_id=case_id,
+                status=CaseStatus.FAILED.value,
+                root_cause=error_reason,
+            )
             await self.emit_event(
                 "investigation_error",
                 f"Error during investigation: {str(e)}",

@@ -81,7 +81,7 @@ class RepositoryManager:
     ):
         self.case_id = case_id
         self.repo_url_or_path = repo_url_or_path.strip()
-        self.timeout = timeout
+        self.timeout = max(timeout, 180)  # Default to at least 180s for network clones
         base_dir = workspaces_dir or settings.WORKSPACES_DIR
         self.case_dir = (base_dir / case_id).resolve()
         self.repo_dir = (self.case_dir / "repo").resolve()
@@ -98,6 +98,9 @@ class RepositoryManager:
         local_path = Path(self.repo_url_or_path)
         is_local = local_path.exists() and local_path.is_dir()
 
+        git_env = os.environ.copy()
+        git_env["GIT_TERMINAL_PROMPT"] = "0"
+
         if is_local:
             # If local directory is a Git repository, clone it locally to isolate work
             if (local_path / ".git").is_dir():
@@ -107,6 +110,7 @@ class RepositoryManager:
                     capture_output=True,
                     text=True,
                     timeout=self.timeout,
+                    env=git_env,
                 )
             else:
                 # Copy tree and initialize a git repo
@@ -117,15 +121,17 @@ class RepositoryManager:
                     check=True,
                     capture_output=True,
                     timeout=self.timeout,
+                    env=git_env,
                 )
         else:
-            # Remote Git URL clone
+            # Remote Git URL clone: shallow single-branch clone for maximum speed and efficiency
             subprocess.run(
-                ["git", "clone", "--depth", "50", self.repo_url_or_path, str(self.repo_dir)],
+                ["git", "clone", "--depth", "1", "--single-branch", self.repo_url_or_path, str(self.repo_dir)],
                 check=True,
                 capture_output=True,
                 text=True,
                 timeout=self.timeout,
+                env=git_env,
             )
 
         return self.repo_dir
