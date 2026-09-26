@@ -35,22 +35,28 @@ export default function CaseLoading() {
           {/* Top cyan neon line */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-sky-400 to-transparent" />
 
-          {/* Animated radar badge */}
-          <div className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-400">
-            <Terminal className="w-7 h-7" />
-            <div className="absolute inset-0 rounded-2xl border border-sky-400/30 animate-ping opacity-25" />
+          {/* Central radar scanner badge with rotating dual ring */}
+          <div className="relative flex items-center justify-center w-20 h-20 my-1">
+            <div className="absolute inset-0 rounded-full border border-sky-400/20 animate-ping opacity-30" />
+            <div
+              className="absolute inset-1 rounded-full border-2 border-dashed border-sky-400/50 animate-spin"
+              style={{ animationDuration: "6s" }}
+            />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500/20 to-indigo-500/20 border border-sky-400/60 flex items-center justify-center shadow-lg shadow-sky-500/10">
+              <Terminal className="w-6 h-6 text-sky-400" />
+            </div>
           </div>
 
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-[10px] font-mono tracking-widest text-sky-400 uppercase">
               <Activity className="w-3 h-3 animate-pulse" />
-              Live Telemetry
+              Dossier Boot Sequence
             </div>
-            <h1 className="text-sm font-bold text-slate-100 tracking-wider font-mono uppercase">
-              Connecting Investigation Dossier
+            <h1 className="text-base font-bold text-slate-100 tracking-wide font-mono uppercase">
+              Connecting Investigation
             </h1>
-            <p className="text-xs text-slate-400 leading-relaxed font-sans max-w-xs mx-auto">
-              Synchronizing forensic event streams, restoring workspace snapshot, and booting agentic inspectors.
+            <p className="text-xs text-sky-300/80 font-mono">
+              Synchronizing forensic event streams & sandbox…
             </p>
           </div>
 
@@ -61,8 +67,8 @@ export default function CaseLoading() {
           </div>
 
           {/* Shimmer progress beam */}
-          <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
-            <div className="h-full bg-gradient-to-r from-sky-500 to-emerald-400 w-3/4 rounded-full animate-pulse" />
+          <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800/80 p-0.5">
+            <div className="h-full bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-400 w-3/4 rounded-full animate-pulse" />
           </div>
         </div>
       </main>

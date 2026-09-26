@@ -78,8 +78,21 @@ export default function CaseInvestigationPage({
     return () => clearInterval(timer);
   }, [isSolved]);
 
-  const fetchFullCase = async () => {
+  const [loadingStep, setLoadingStep] = useState(0);
+
+  const fetchFullCase = async (isInitial = false) => {
+    const startTime = Date.now();
+    let t1: NodeJS.Timeout | null = null;
+    let t2: NodeJS.Timeout | null = null;
+
     try {
+      if (isInitial) {
+        setLoading(true);
+        setLoadingStep(0);
+        t1 = setTimeout(() => setLoadingStep(1), 450);
+        t2 = setTimeout(() => setLoadingStep(2), 900);
+      }
+
       const data = await getCase(caseId);
       setCaseData(data);
       setPageError(null);
@@ -93,16 +106,28 @@ export default function CaseInvestigationPage({
           console.warn("Could not fetch report yet:", e);
         }
       }
+
+      if (isInitial) {
+        const elapsed = Date.now() - startTime;
+        const MIN_DISPLAY_MS = 1400; // Ensure visible for at least 1.4s so the sequence is perceived
+        if (elapsed < MIN_DISPLAY_MS) {
+          await new Promise((resolve) => setTimeout(resolve, MIN_DISPLAY_MS - elapsed));
+        }
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to load case data.";
       setPageError(msg);
     } finally {
-      setLoading(false);
+      if (t1) clearTimeout(t1);
+      if (t2) clearTimeout(t2);
+      if (isInitial) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchFullCase();
+    fetchFullCase(true);
   }, [caseId]);
 
   // Refresh case artifacts only when *new* actionable events arrive — not on
@@ -152,37 +177,63 @@ export default function CaseInvestigationPage({
     : null;
   const dossierId = caseId.replace(/^case_/, "");
 
+  const LOADING_STEPS = [
+    { label: "Synchronizing telemetry event stream", pct: "35%" },
+    { label: "Mounting repository workspace sandbox", pct: "70%" },
+    { label: "Bootstrapping neural agentic inspectors", pct: "100%" },
+  ];
+
   if (loading) {
+    const currentStep = LOADING_STEPS[Math.min(loadingStep, LOADING_STEPS.length - 1)];
+
     return (
       <div className="min-h-screen bg-cyber-grid bg-[#080c16] text-slate-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full border border-slate-800/80 bg-[#0c1220]/90 rounded-2xl p-8 backdrop-blur-xl shadow-2xl flex flex-col items-center text-center space-y-6 relative overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 bg-gradient-to-r from-transparent via-sky-400/60 to-transparent" />
+        <div className="max-w-md w-full border border-slate-800/80 bg-[#0c1220]/95 rounded-2xl p-8 backdrop-blur-xl shadow-2xl flex flex-col items-center text-center space-y-6 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-sky-400 to-transparent" />
 
-          {/* Animated scanner radar badge */}
-          <div className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-400">
-            <Terminal className="w-7 h-7" />
-            <div className="absolute inset-0 rounded-2xl border border-sky-400/30 animate-ping opacity-25" />
+          {/* Central radar scanner badge with rotating dual ring */}
+          <div className="relative flex items-center justify-center w-20 h-20 my-1">
+            <div className="absolute inset-0 rounded-full border border-sky-400/20 animate-ping opacity-30" />
+            <div
+              className="absolute inset-1 rounded-full border-2 border-dashed border-sky-400/50 animate-spin"
+              style={{ animationDuration: "6s" }}
+            />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500/20 to-indigo-500/20 border border-sky-400/60 flex items-center justify-center shadow-lg shadow-sky-500/10">
+              <Terminal className="w-6 h-6 text-sky-400" />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-sm font-bold text-slate-100 tracking-wider font-mono uppercase">
-              Initializing Investigation Dossier
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-[10px] font-mono tracking-widest text-sky-400 uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+              Dossier Boot Sequence
+            </div>
+            <h2 className="text-base font-bold text-slate-100 tracking-wide font-mono uppercase">
+              Initializing Investigation
             </h2>
-            <p className="text-xs text-slate-400 leading-relaxed font-sans max-w-xs mx-auto">
-              Connecting telemetry stream, restoring repository snapshots, and bootstrapping inspection sandbox.
+            <p className="text-xs text-sky-300/85 font-mono transition-all duration-300">
+              {currentStep.label}…
             </p>
           </div>
 
           {/* Dossier tag */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-300">
-            <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
-            <span>Dossier Reference:</span>
+            <span className="text-slate-500">Dossier Reference:</span>
             <span className="text-sky-300 font-bold">#{dossierId}</span>
           </div>
 
-          {/* Shimmer progress line */}
-          <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
-            <div className="h-full bg-gradient-to-r from-sky-500 to-emerald-400 w-2/3 rounded-full animate-pulse" />
+          {/* Dynamic smooth progress bar */}
+          <div className="w-full space-y-1.5">
+            <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800/80 p-0.5">
+              <div
+                className="h-full bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-400 rounded-full transition-all duration-500 ease-out"
+                style={{ width: currentStep.pct }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] font-mono text-slate-500 px-0.5">
+              <span>Stage {loadingStep + 1} of 3</span>
+              <span>{currentStep.pct}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -199,7 +250,7 @@ export default function CaseInvestigationPage({
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchFullCase}
+              onClick={() => fetchFullCase(false)}
               className="border-slate-700 text-slate-300"
             >
               <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Retry
@@ -287,7 +338,7 @@ export default function CaseInvestigationPage({
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchFullCase}
+            onClick={() => fetchFullCase(false)}
             className="h-8 border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-slate-300"
             title="Refresh"
           >
