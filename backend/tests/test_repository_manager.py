@@ -6,9 +6,10 @@ from app.repository import RepositoryManager
 @pytest.fixture(scope="module")
 def repo_manager(tmp_path_factory):
     # Use temporary directory for isolated workspace
-    workspaces_dir = tmp_path_factory.mktemp("test_workspaces")
-    demo_repo_path = Path("c:/GitHub/agent-holmes/test-repos/session-logout-demo")
+    project_root = Path(__file__).resolve().parent.parent.parent
+    demo_repo_path = project_root / "test-repos" / "session-logout-demo"
     
+    workspaces_dir = tmp_path_factory.mktemp("test_workspaces")
     manager = RepositoryManager(
         case_id="case-repo-test-001",
         repo_url_or_path=str(demo_repo_path),

@@ -17,7 +17,7 @@ from app.api.cases import run_investigation_background
 async def test_full_e2e_investigation_flow():
     """Run full E2E flow on the demo repository and verify all 12 DoD criteria."""
     case_id = f"case_e2e_{uuid.uuid4().hex[:8]}"
-    demo_repo = "c:/GitHub/agent-holmes/test-repos/session-logout-demo"
+    demo_repo = "test-repos/session-logout-demo"
 
     # 1. Direct DB creation of initial case
     with Session(engine) as session:

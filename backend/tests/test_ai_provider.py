@@ -9,7 +9,8 @@ from app.repository import RepositoryManager
 @pytest.fixture
 def test_context(tmp_path):
     workspaces_dir = tmp_path / "workspaces"
-    demo_repo = Path("c:/GitHub/agent-holmes/test-repos/session-logout-demo")
+    project_root = Path(__file__).resolve().parent.parent.parent
+    demo_repo = project_root / "test-repos" / "session-logout-demo"
     
     repo_manager = RepositoryManager(
         case_id="case-ai-test",

@@ -12,7 +12,8 @@ from app.investigation import InvestigationEngine, EvidenceStore, InvestigationP
 @pytest.fixture
 def investigation_setup(tmp_path):
     workspaces_dir = tmp_path / "workspaces"
-    demo_repo = Path("c:/GitHub/agent-holmes/test-repos/session-logout-demo")
+    project_root = Path(__file__).resolve().parent.parent.parent
+    demo_repo = project_root / "test-repos" / "session-logout-demo"
     case_id = "test-case-engine-001"
 
     # In-memory SQLite database

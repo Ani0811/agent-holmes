@@ -132,7 +132,8 @@ def test_docker_detection_and_fallback():
 
 
 def test_verification_engine_with_session_logout_demo(tmp_path):
-    demo_src = Path("c:/GitHub/agent-holmes/test-repos/session-logout-demo")
+    project_root = Path(__file__).resolve().parent.parent.parent
+    demo_src = project_root / "test-repos" / "session-logout-demo"
     workspace = tmp_path / "demo_workspace"
     shutil.copytree(demo_src, workspace)
 

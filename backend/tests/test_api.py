@@ -42,7 +42,7 @@ def test_create_and_get_case(client):
     with patch("app.api.cases.run_investigation_background", new_callable=AsyncMock) as mock_task:
         # 1. Create Case
         payload = {
-            "repo_url": "c:/GitHub/agent-holmes/test-repos/session-logout-demo",
+            "repo_url": "test-repos/session-logout-demo",
             "bug_description": "Users get logged out after token refresh",
             "stack_trace": "401 Unauthorized at /api/user/profile",
         }
@@ -199,7 +199,7 @@ def test_websocket_stream_replay_and_ping(client):
 def test_create_repo_review_case(client):
     with patch("app.api.cases.run_investigation_background", new_callable=AsyncMock) as mock_task:
         payload = {
-            "repo_url": "c:/GitHub/agent-holmes/test-repos/session-logout-demo",
+            "repo_url": "test-repos/session-logout-demo",
             "case_type": "repo_review",
         }
         res = client.post("/api/cases", json=payload)

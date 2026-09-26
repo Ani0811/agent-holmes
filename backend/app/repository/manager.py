@@ -95,8 +95,32 @@ class RepositoryManager:
         if self.repo_dir.exists():
             shutil.rmtree(self.repo_dir, ignore_errors=True)
 
-        local_path = Path(self.repo_url_or_path)
+        raw_target = self.repo_url_or_path.strip()
+        local_path = Path(raw_target).expanduser()
         is_local = local_path.exists() and local_path.is_dir()
+
+        # If not directly found, check relative to project root or parent directories
+        if not is_local and not (
+            raw_target.startswith("http://")
+            or raw_target.startswith("https://")
+            or raw_target.startswith("git@")
+            or raw_target.startswith("ssh://")
+        ):
+            # Resolve project root (backend/app/repository/manager.py -> project root)
+            project_root = Path(__file__).resolve().parent.parent.parent.parent
+            clean_rel = raw_target.lstrip("/\\")
+
+            candidates = [
+                project_root / clean_rel,
+                project_root / "test-repos" / clean_rel,
+                Path.cwd() / clean_rel,
+                Path.cwd().parent / clean_rel,
+            ]
+            for candidate in candidates:
+                if candidate.exists() and candidate.is_dir():
+                    local_path = candidate.resolve()
+                    is_local = True
+                    break
 
         git_env = os.environ.copy()
         git_env["GIT_TERMINAL_PROMPT"] = "0"

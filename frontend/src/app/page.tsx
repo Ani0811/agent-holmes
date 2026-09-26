@@ -54,7 +54,7 @@ export default function NewCasePage() {
   }, []);
 
   const handleLoadDemo = () => {
-    setRepoUrl("c:/GitHub/agent-holmes/test-repos/session-logout-demo");
+    setRepoUrl("test-repos/session-logout-demo");
     if (investigationType === "repo_review") {
       setBugDescription(
         "Comprehensive architecture audit: review authentication, session persistence, code smells, and test suite health."
