@@ -184,21 +184,42 @@ class BobProvider(AIProvider):
 
         # Handling for Repository Review mode
         if is_review:
+            list_res = tool_results.get("list_files", {})
+            files = list_res.get("files", [])
+            file_names = {f.get("name", "") for f in files}
+
+            # Detect ecosystem and tooling from actual discovered files
+            is_node = any(fn in file_names for fn in ("package.json", "tsconfig.json", "yarn.lock", "pnpm-lock.yaml", "next.config.js", "next.config.ts"))
+            is_python = any(fn in file_names for fn in ("pyproject.toml", "requirements.txt", "setup.py", "Pipfile", "poetry.lock")) or any(fn.endswith(".py") for fn in file_names)
+            is_rust = "Cargo.toml" in file_names
+            is_go = "go.mod" in file_names
+            is_docker = any(fn.startswith("Dockerfile") or "docker-compose" in fn for fn in file_names)
+            has_tests = any(fn in ("tests", "test", "__tests__", "spec") for fn in file_names)
+            has_ci = ".github" in file_names or ".gitlab-ci.yml" in file_names
+
             if "read_file" not in called_tools:
-                # Pick a file to read
-                list_res = tool_results.get("list_files", {})
-                files = list_res.get("files", [])
+                manifest_priorities = [
+                    "package.json",
+                    "pyproject.toml",
+                    "requirements.txt",
+                    "Cargo.toml",
+                    "go.mod",
+                    "README.md",
+                    "index.js",
+                    "main.py",
+                    "app.py",
+                ]
                 target_file = next(
-                    (f["path"] for f in files if f.get("name") in ("README.md", "app.py", "main.py", "pyproject.toml")),
-                    files[0]["path"] if files else "src/app.py",
+                    (f["path"] for p in manifest_priorities for f in files if f.get("name") == p),
+                    files[0]["path"] if files else "README.md",
                 )
                 return ProviderResponse(
-                    content=f"Reviewing architecture entrypoint and configuration in `{target_file}`.",
+                    content=f"Auditing project configuration and entrypoint in `{target_file}`.",
                     tool_calls=[
                         ToolCall(
                             id=f"call_{uuid.uuid4().hex[:8]}",
                             name="read_file",
-                            arguments={"path": target_file, "start_line": 1, "end_line": 60},
+                            arguments={"path": target_file, "start_line": 1, "end_line": 80},
                         )
                     ],
                     finish_reason="tool_calls",
@@ -207,8 +228,42 @@ class BobProvider(AIProvider):
             if "record_evidence" not in called_tools:
                 read_res = tool_results.get("read_file", {})
                 file_path = read_res.get("path", "architecture")
+                raw_content = read_res.get("content", "")
+
+                if is_node and "package.json" in file_path:
+                    try:
+                        pkg = json.loads(raw_content)
+                        pkg_name = pkg.get("name", "Node.js Application")
+                        deps = list(pkg.get("dependencies", {}).keys())[:6]
+                        scripts = list(pkg.get("scripts", {}).keys())
+                        claim = f"Node.js Ecosystem: {pkg_name} (v{pkg.get('version', '0.0.1')})"
+                        desc = (
+                            f"Discovered {len(pkg.get('dependencies', {}))} dependencies "
+                            f"({', '.join(deps) if deps else 'standard packages'}) and "
+                            f"{len(pkg.get('devDependencies', {}))} dev tools. "
+                            f"Available npm scripts: {', '.join(scripts) if scripts else 'none specified'}."
+                        )
+                    except Exception:
+                        claim = "JavaScript/TypeScript Ecosystem Architecture"
+                        desc = f"Discovered Node.js project manifest at `{file_path}` with active dependencies."
+                elif is_python:
+                    claim = "Python Architecture & Runtime Environment"
+                    desc = (
+                        f"Python project structure inspected at `{file_path}`. "
+                        f"Automated test suite: {'Detected in root' if has_tests else 'No tests directory found'}. "
+                        f"Container configuration: {'Dockerfile present' if is_docker else 'No Dockerfile present'}."
+                    )
+                else:
+                    claim = f"Repository Architecture: {file_path}"
+                    desc = (
+                        f"Cataloged {len(files)} top-level artifacts. "
+                        f"CI/CD Pipeline: {'Present (.github)' if has_ci else 'Missing'}; "
+                        f"Containerization: {'Dockerized' if is_docker else 'Uncontainerized'}; "
+                        f"Automated Tests: {'Discovered' if has_tests else 'None detected at root'}."
+                    )
+
                 return ProviderResponse(
-                    content="Cataloging codebase structure, module boundaries, and state management evidence.",
+                    content="Cataloging codebase structure, module boundaries, and dependency health.",
                     tool_calls=[
                         ToolCall(
                             id=f"call_{uuid.uuid4().hex[:8]}",
@@ -217,12 +272,9 @@ class BobProvider(AIProvider):
                                 "file": file_path,
                                 "line": 1,
                                 "type": "code_snippet",
-                                "claim": "Architecture Review: modular structure with explicit routing & state management.",
-                                "description": (
-                                    "Codebase follows modular separation of concerns. State transitions and session "
-                                    "lifecycles should ensure explicit modification flagging and boundary validation."
-                                ),
-                                "confidence": 0.90,
+                                "claim": claim,
+                                "description": desc,
+                                "confidence": 0.92,
                             },
                         )
                     ],
@@ -230,19 +282,45 @@ class BobProvider(AIProvider):
                 )
 
             if "create_hypothesis" not in called_tools:
+                recs = []
+                if is_node:
+                    if not has_tests:
+                        recs.append("1) Implement automated test suite with Vitest or Jest")
+                    else:
+                        recs.append("1) Expand automated regression test coverage")
+                    if "tsconfig.json" not in file_names:
+                        recs.append("2) Introduce TypeScript and strict tsconfig type checking")
+                    else:
+                        recs.append("2) Verify strict null checks and module boundary types")
+                    if not has_ci:
+                        recs.append("3) Set up automated GitHub Actions CI workflow for pull request validation")
+                elif is_python:
+                    if not has_tests:
+                        recs.append("1) Set up dedicated automated pytest test suite under `tests/`")
+                    else:
+                        recs.append("1) Expand automated test coverage for core business logic")
+                    recs.append("2) Enforce static type checking with Mypy and automated formatting with Ruff")
+                    if not is_docker:
+                        recs.append("3) Containerize runtime environment with multi-stage Dockerfile")
+                else:
+                    recs.append("1) Ensure automated regression tests are established for core workflows")
+                    if not has_ci:
+                        recs.append("2) Implement automated CI/CD validation on repository commits")
+                    if not is_docker:
+                        recs.append("3) Provide containerized execution environment for developer onboarding")
+
+                repo_label = "Node.js/JavaScript" if is_node else ("Python" if is_python else "Codebase")
                 return ProviderResponse(
-                    content="Formulating architectural recommendations and code quality assessment.",
+                    content="Synthesizing architectural recommendations and code quality assessment.",
                     tool_calls=[
                         ToolCall(
                             id=f"call_{uuid.uuid4().hex[:8]}",
                             name="create_hypothesis",
                             arguments={
-                                "title": "Code Quality & Architecture Review Assessment",
+                                "title": f"{repo_label} Architecture & Quality Review",
                                 "description": (
-                                    "Repository architecture is well-structured. Recommended improvements: "
-                                    "1) Enforce strict type annotations across service boundaries; "
-                                    "2) Ensure mutable session mutations trigger explicit persistence; "
-                                    "3) Maintain comprehensive test coverage for auth and state handlers."
+                                    f"Repository analysis complete. Discovered structure follows modular layout. "
+                                    f"Key recommendations: {' '.join(recs)}."
                                 ),
                                 "confidence": 0.92,
                                 "evidence_ids": [],
@@ -253,20 +331,28 @@ class BobProvider(AIProvider):
                 )
 
             if "run_tests" not in called_tools:
+                test_cmd = "npm test" if is_node else ("cargo test" if is_rust else ("go test ./..." if is_go else "pytest"))
                 return ProviderResponse(
-                    content="Checking existing automated test suite for baseline health.",
+                    content=f"Checking existing automated test suite for baseline health with `{test_cmd}`.",
                     tool_calls=[
                         ToolCall(
                             id=f"call_{uuid.uuid4().hex[:8]}",
                             name="run_tests",
-                            arguments={"test_command": "pytest"},
+                            arguments={"test_command": test_cmd},
                         )
                     ],
                     finish_reason="tool_calls",
                 )
 
+            final_assessment = (
+                f"{repo_label} architectural audit complete. "
+                f"Cataloged {len(files)} top-level artifacts. "
+                f"CI/CD pipeline: {'Configured (.github)' if has_ci else 'Missing'}; "
+                f"Containerization: {'Dockerized' if is_docker else 'Uncontainerized'}; "
+                f"Automated test runner: `{test_cmd}`."
+            )
             return ProviderResponse(
-                content="Repository audit complete. Structural observations, architecture recommendations, and test suite health documented.",
+                content=final_assessment,
                 tool_calls=[],
                 finish_reason="stop",
             )

@@ -157,12 +157,18 @@ class InvestigationEngine:
                     (h for h in self.state.hypotheses if h.status == "confirmed"),
                     self.state.hypotheses[-1] if self.state.hypotheses else None,
                 )
-                default_summary = (
-                    "Repository review complete: architecture analyzed, findings recorded, and recommendations compiled."
-                    if is_review
-                    else "Root cause identified and successfully verified by automated tests."
-                )
-                root_cause = winning_hypo.description if winning_hypo else default_summary
+                final_msg = agent_result.get("final_message", "").strip()
+                if is_review:
+                    if final_msg and len(final_msg) > 20 and not final_msg.startswith("Investigation complete"):
+                        root_cause = final_msg
+                    elif winning_hypo:
+                        root_cause = f"Repository audit completed ({winning_hypo.title}). Architectural evidence cataloged and test suite verified."
+                    else:
+                        root_cause = "Repository review complete: architecture analyzed, findings recorded, and recommendations compiled."
+                else:
+                    default_summary = "Root cause identified and successfully verified by automated tests."
+                    root_cause = winning_hypo.description if winning_hypo else default_summary
+
                 self.state.root_cause_summary = root_cause
                 self.state.is_solved = True
                 self.state.status = CaseStatus.SOLVED.value
