@@ -196,6 +196,8 @@ class BobProvider(AIProvider):
             is_docker = any(fn.startswith("Dockerfile") or "docker-compose" in fn for fn in file_names)
             has_tests = any(fn in ("tests", "test", "__tests__", "spec") for fn in file_names)
             has_ci = ".github" in file_names or ".gitlab-ci.yml" in file_names
+            repo_label = "Node.js/JavaScript" if is_node else ("Python" if is_python else ("Rust" if is_rust else ("Go" if is_go else "Codebase")))
+            test_cmd = "npm test" if is_node else ("cargo test" if is_rust else ("go test ./..." if is_go else "pytest"))
 
             if "read_file" not in called_tools:
                 manifest_priorities = [
@@ -309,7 +311,6 @@ class BobProvider(AIProvider):
                     if not is_docker:
                         recs.append("3) Provide containerized execution environment for developer onboarding")
 
-                repo_label = "Node.js/JavaScript" if is_node else ("Python" if is_python else "Codebase")
                 return ProviderResponse(
                     content="Synthesizing architectural recommendations and code quality assessment.",
                     tool_calls=[
@@ -331,7 +332,6 @@ class BobProvider(AIProvider):
                 )
 
             if "run_tests" not in called_tools:
-                test_cmd = "npm test" if is_node else ("cargo test" if is_rust else ("go test ./..." if is_go else "pytest"))
                 return ProviderResponse(
                     content=f"Checking existing automated test suite for baseline health with `{test_cmd}`.",
                     tool_calls=[

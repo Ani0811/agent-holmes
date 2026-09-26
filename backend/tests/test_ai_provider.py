@@ -140,3 +140,20 @@ async def test_agentic_loop_e2e(test_context):
     assert result["steps_taken"] > 0
     assert result["tests_passed"] is True
     assert "Investigation complete" in result["final_message"]
+
+
+@pytest.mark.asyncio
+async def test_agentic_loop_repo_review(test_context):
+    ctx, events = test_context
+    provider = BobProvider()
+
+    result = await provider.run_agentic_loop(
+        context=ctx,
+        bug_description="Repository review: architecture audit and code quality review",
+        case_type="repo_review",
+        max_steps=10,
+    )
+
+    assert result["steps_taken"] > 0
+    assert "audit complete" in result["final_message"]
+
