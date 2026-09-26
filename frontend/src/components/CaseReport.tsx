@@ -18,6 +18,7 @@ interface Props {
 export function CaseReport({ report }: Props) {
   const [showJson, setShowJson] = useState(false);
   const [copied, setCopied] = useState(false);
+  const isReview = report.case_type === "repo_review";
 
   const handleCopyJson = () => {
     navigator.clipboard.writeText(JSON.stringify(report, null, 2));
@@ -56,10 +57,16 @@ export function CaseReport({ report }: Props) {
                   report.solved ? "text-emerald-400" : "text-rose-400"
                 }`}
               >
-                {report.solved ? "CASE SOLVED" : "CASE FAILED / UNVERIFIED"}
+                {report.solved
+                  ? isReview
+                    ? "AUDIT COMPLETE / HEALTHY"
+                    : "CASE SOLVED"
+                  : isReview
+                  ? "AUDIT REPORT / ISSUES IDENTIFIED"
+                  : "CASE FAILED / UNVERIFIED"}
               </span>
               <Badge variant="outline" className="text-xs border-slate-700 text-slate-400 font-mono">
-                {report.case_id}
+                {isReview ? "REVIEW" : "BUG"} · #{report.case_id.replace(/^case_/, "")}
               </Badge>
             </div>
             <p className="text-sm text-slate-300 font-sans max-w-2xl leading-relaxed">
@@ -88,7 +95,7 @@ export function CaseReport({ report }: Props) {
               }
             >
               <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
-              New Investigation
+              {isReview ? "New Audit" : "New Investigation"}
             </Button>
           </Link>
         </div>
@@ -115,13 +122,13 @@ export function CaseReport({ report }: Props) {
             <CardHeader className="py-3 px-4 border-b border-slate-800 bg-[#080d1a] flex flex-row items-center gap-2">
               <Sparkles className="w-4 h-4 text-emerald-400" />
               <CardTitle className="text-sm font-semibold tracking-wide">
-                IDENTIFIED ROOT CAUSE
+                {isReview ? "EXECUTIVE AUDIT SUMMARY" : "IDENTIFIED ROOT CAUSE"}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 space-y-3">
               <div className="p-3.5 rounded-lg bg-emerald-950/20 border border-emerald-800/40 text-xs text-emerald-200 leading-relaxed font-sans">
                 <span className="font-bold text-emerald-300 block mb-1">
-                  Root Cause Diagnosis:
+                  {isReview ? "Audit Assessment:" : "Root Cause Diagnosis:"}
                 </span>
                 {report.root_cause || report.summary}
               </div>
@@ -130,7 +137,7 @@ export function CaseReport({ report }: Props) {
                 <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-xs">
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-semibold text-slate-200">
-                      Confirmed Hypothesis
+                      {isReview ? "Key Recommendation" : "Confirmed Hypothesis"}
                     </span>
                     <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">
                       {Math.round(report.winning_hypothesis.confidence * 100)}% CONFIDENCE
@@ -152,7 +159,9 @@ export function CaseReport({ report }: Props) {
             />
           ) : (
             <div className="p-6 rounded-lg border border-slate-800 bg-slate-900/40 text-center text-xs text-slate-500">
-              No patch was generated for this case.
+              {isReview
+                ? "No code changes required — repository passed architectural audit."
+                : "No patch was generated for this case."}
             </div>
           )}
         </div>

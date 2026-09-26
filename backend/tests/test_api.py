@@ -194,3 +194,18 @@ def test_websocket_stream_replay_and_ping(client):
         ws.send_text(json.dumps({"type": "ping"}))
         pong_msg = ws.receive_json()
         assert pong_msg["type"] == "pong"
+
+
+def test_create_repo_review_case(client):
+    with patch("app.api.cases.run_investigation_background", new_callable=AsyncMock) as mock_task:
+        payload = {
+            "repo_url": "c:/GitHub/agent-holmes/test-repos/session-logout-demo",
+            "case_type": "repo_review",
+        }
+        res = client.post("/api/cases", json=payload)
+        assert res.status_code == 201
+        data = res.json()
+        assert data["case_type"] == "repo_review"
+        assert "repository review" in data["bug_description"].lower()
+        mock_task.assert_called_once_with(data["case_id"])
+

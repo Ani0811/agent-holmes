@@ -22,6 +22,16 @@ engine = create_engine(
 def create_db_and_tables() -> None:
     """Initialize database tables defined in SQLModel metadata."""
     SQLModel.metadata.create_all(engine)
+    # Ensure backwards-compatible column additions for existing sqlite databases
+    with engine.connect() as conn:
+        try:
+            from sqlalchemy import text
+            columns = [row[1] for row in conn.execute(text("PRAGMA table_info(cases)")).fetchall()]
+            if columns and "case_type" not in columns:
+                conn.execute(text("ALTER TABLE cases ADD COLUMN case_type TEXT DEFAULT 'bug_fix'"))
+                conn.commit()
+        except Exception:
+            pass
 
 
 def get_session() -> Generator[Session, None, None]:

@@ -152,8 +152,9 @@ class InvestigationEventRead(BaseModel):
 # ---------------------------------------------------------
 class CaseCreate(BaseModel):
     repo_url: str = Field(..., description="Git clone URL or local repository path")
-    bug_description: str = Field(..., description="Natural language description of the bug")
-    stack_trace: Optional[str] = Field(None, description="Optional stack trace or error log")
+    bug_description: Optional[str] = Field(default=None, description="Natural language description of the bug or review scope")
+    case_type: str = Field(default="bug_fix", description="'bug_fix' or 'repo_review'")
+    stack_trace: Optional[str] = Field(None, description="Optional stack trace, focus areas, or error log")
 
 
 class CaseRead(BaseModel):
@@ -162,6 +163,7 @@ class CaseRead(BaseModel):
     bug_description: str
     stack_trace: Optional[str] = None
     status: str
+    case_type: str = "bug_fix"
     root_cause: Optional[str] = None
     created_at: datetime
     updated_at: datetime
@@ -180,6 +182,7 @@ class CaseDetail(CaseRead):
 class CaseReport(BaseModel):
     case_id: str
     status: str
+    case_type: str = "bug_fix"
     root_cause: Optional[str] = None
     repo_url: str
     bug_description: str

@@ -126,12 +126,21 @@ async def create_case(
     background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
 ):
-    """Create a new bug investigation case and trigger background investigation."""
+    """Create a new bug investigation or repo review case and trigger background investigation."""
     case_id = f"case_{uuid.uuid4().hex[:10]}"
+    case_type = payload.case_type or "bug_fix"
+    bug_description = (payload.bug_description or "").strip()
+    if not bug_description:
+        if case_type == "repo_review":
+            bug_description = "Full repository review: architecture, code quality, security audit, and test suite verification."
+        else:
+            bug_description = "Unspecified issue investigation"
+
     case = Case(
         case_id=case_id,
         repo_url=payload.repo_url,
-        bug_description=payload.bug_description,
+        bug_description=bug_description,
+        case_type=case_type,
         stack_trace=payload.stack_trace,
         status=CaseStatus.PENDING.value,
     )
@@ -252,16 +261,19 @@ def get_case_report(case_id: str, session: Session = Depends(get_session)):
         test_results[-1] if test_results else None,
     )
 
-    is_solved = (case.status == CaseStatus.SOLVED.value) and (latest_test is not None and latest_test.passed)
+    is_solved = (case.status == CaseStatus.SOLVED.value)
+    if getattr(case, "case_type", "bug_fix") != "repo_review":
+        is_solved = is_solved and (latest_test is not None and latest_test.passed)
 
     summary_text = (
         case.root_cause
-        or (winning_hypo.description if winning_hypo else "Investigation concluded.")
+        or (winning_hypo.description if winning_hypo else ("Repository review completed successfully." if getattr(case, "case_type", "bug_fix") == "repo_review" else "Investigation concluded."))
     )
 
     return CaseReport(
         case_id=case.case_id,
         status=case.status,
+        case_type=getattr(case, "case_type", "bug_fix") or "bug_fix",
         root_cause=case.root_cause,
         repo_url=case.repo_url,
         bug_description=case.bug_description,

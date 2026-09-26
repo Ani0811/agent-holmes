@@ -26,6 +26,7 @@ class InvestigationState:
     repo_url: str
     bug_description: str
     stack_trace: Optional[str] = None
+    case_type: str = "bug_fix"
     phase: InvestigationPhase = InvestigationPhase.DISCOVERY
     status: str = "pending"
 

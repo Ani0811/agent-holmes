@@ -28,19 +28,19 @@ export function InvestigationFeed({ events, isConnected }: Props) {
   const getEventBadge = (type: string) => {
     switch (type) {
       case "phase_change":
-        return <Badge className="bg-sky-500/20 text-sky-400 border-sky-500/40">PHASE</Badge>;
+        return <Badge className="bg-sky-500/15 text-sky-400 border-sky-500/30 text-[10px] font-mono">PHASE</Badge>;
       case "repo_scanned":
-        return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40">INDEX</Badge>;
+        return <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] font-mono">INDEX</Badge>;
       case "command_executed":
-        return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/40">EXEC</Badge>;
+        return <Badge className="bg-slate-800 text-slate-300 border-slate-700 text-[10px] font-mono">EXEC</Badge>;
       case "patch_applied":
-        return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/40">PATCH</Badge>;
+        return <Badge className="bg-slate-800 text-slate-300 border-slate-700 text-[10px] font-mono">PATCH</Badge>;
       case "case_solved":
-        return <Badge className="bg-emerald-500 text-slate-950 font-bold border-emerald-400">SOLVED</Badge>;
+        return <Badge className="bg-emerald-500 text-slate-950 font-bold border-emerald-400 text-[10px] font-mono">SOLVED</Badge>;
       case "case_failed":
-        return <Badge className="bg-rose-500 text-white font-bold border-rose-400">FAILED</Badge>;
+        return <Badge className="bg-rose-500 text-white font-bold border-rose-400 text-[10px] font-mono">FAILED</Badge>;
       default:
-        return <Badge variant="outline" className="text-slate-400 border-slate-700">{type.toUpperCase()}</Badge>;
+        return <Badge className="bg-slate-900 text-slate-400 border-slate-700 text-[10px] font-mono">{type.replace(/_/g, " ").toUpperCase()}</Badge>;
     }
   };
 
@@ -94,10 +94,12 @@ export function InvestigationFeed({ events, isConnected }: Props) {
           events.map((ev, idx) => {
             const hasData = ev.data && Object.keys(ev.data).length > 0;
             const isExpanded = !!expandedEvents[idx];
+            // Use a stable key: prefer event id, fall back to index
+            const eventKey = ev.id != null ? String(ev.id) : `${ev.event_type}-${ev.timestamp}-${idx}`;
 
             return (
               <div
-                key={idx}
+                key={eventKey}
                 className="group p-2.5 rounded bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-colors"
               >
                 <div className="flex items-start justify-between gap-3">

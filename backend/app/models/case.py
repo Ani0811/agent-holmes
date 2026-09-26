@@ -25,6 +25,7 @@ class Case(SQLModel, table=True):
     bug_description: str = Field(description="Description of the bug reported")
     stack_trace: Optional[str] = Field(default=None, description="Optional stack trace or error log")
     status: str = Field(default=CaseStatus.PENDING.value, index=True)
+    case_type: str = Field(default="bug_fix", index=True, description="'bug_fix' or 'repo_review'")
     root_cause: Optional[str] = Field(default=None, description="Identified root cause summary")
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)

@@ -35,11 +35,13 @@ class InvestigationEngine:
         self.max_patch_attempts = max_patch_attempts
         self.max_steps = max_steps
 
+        case_type = getattr(case, "case_type", "bug_fix") or "bug_fix"
         self.state = InvestigationState(
             case_id=case.case_id,
             repo_url=case.repo_url,
             bug_description=case.bug_description,
             stack_trace=case.stack_trace,
+            case_type=case_type,
             phase=InvestigationPhase.DISCOVERY,
             status=CaseStatus.PENDING.value,
             max_steps=max_steps,
@@ -109,9 +111,15 @@ class InvestigationEngine:
             )
 
             # 2. SEARCH & INVESTIGATION PHASES
+            is_review = (self.state.case_type == "repo_review")
+            search_msg = (
+                "Auditing codebase structure, architecture, and code quality."
+                if is_review
+                else "Searching codebase for symbols, routes, and logic related to bug report."
+            )
             await self.transition_phase(
                 InvestigationPhase.SEARCH,
-                "Searching codebase for symbols, routes, and logic related to bug report.",
+                search_msg,
             )
 
             tool_ctx = ToolExecutionContext(
@@ -126,6 +134,7 @@ class InvestigationEngine:
                 context=tool_ctx,
                 bug_description=self.case.bug_description,
                 stack_trace=self.case.stack_trace,
+                case_type=self.state.case_type,
                 max_steps=self.max_steps,
             )
 
@@ -142,17 +151,18 @@ class InvestigationEngine:
                 # Double-check database test results
                 tests_passed = any(tr.passed for tr in self.state.test_results)
 
-            if tests_passed:
+            if is_review or tests_passed:
                 # Determine winning root cause summary
                 winning_hypo = next(
                     (h for h in self.state.hypotheses if h.status == "confirmed"),
                     self.state.hypotheses[-1] if self.state.hypotheses else None,
                 )
-                root_cause = (
-                    winning_hypo.description
-                    if winning_hypo
+                default_summary = (
+                    "Repository review complete: architecture analyzed, findings recorded, and recommendations compiled."
+                    if is_review
                     else "Root cause identified and successfully verified by automated tests."
                 )
+                root_cause = winning_hypo.description if winning_hypo else default_summary
                 self.state.root_cause_summary = root_cause
                 self.state.is_solved = True
                 self.state.status = CaseStatus.SOLVED.value
@@ -163,16 +173,22 @@ class InvestigationEngine:
                     root_cause=root_cause,
                 )
 
+                conclusion_msg = (
+                    "Repository review completed. Findings and recommendations compiled."
+                    if is_review
+                    else "Automated tests passed! Fix verified. Case solved."
+                )
                 await self.transition_phase(
                     InvestigationPhase.REPORT,
-                    "Automated tests passed! Fix verified. Case solved.",
+                    conclusion_msg,
                 )
                 await self.emit_event(
                     "case_solved",
-                    f"CASE SOLVED: {root_cause}",
+                    f"{'AUDIT COMPLETE' if is_review else 'CASE SOLVED'}: {root_cause}",
                     {
                         "case_id": case_id,
                         "status": "solved",
+                        "case_type": self.state.case_type,
                         "root_cause": root_cause,
                         "total_evidence": len(self.state.evidence),
                         "total_hypotheses": len(self.state.hypotheses),

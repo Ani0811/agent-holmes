@@ -423,9 +423,16 @@ async def execute_tool(
                 session.commit()
 
             if context.emit_event:
+                if exec_res.passed:
+                    outcome_str = "PASSED"
+                elif exec_res.exit_code == 5 or (exec_res.stdout and "collected 0 items" in exec_res.stdout):
+                    outcome_str = "NO TESTS FOUND"
+                else:
+                    outcome_str = "FAILED"
+
                 await context.emit_event(
                     "command_executed",
-                    f"Executed `{cmd}` -> Exit {exec_res.exit_code} ({'PASSED' if exec_res.passed else 'FAILED'})",
+                    f"Executed `{cmd}` -> Exit {exec_res.exit_code} ({outcome_str})",
                     result_payload,
                 )
 

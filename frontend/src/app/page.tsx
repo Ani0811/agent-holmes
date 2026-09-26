@@ -10,29 +10,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Search,
-  Sparkles,
   GitBranch,
   Terminal,
   Clock,
   ArrowRight,
   ShieldAlert,
-  ShieldCheck,
   FolderGit2,
-  Cpu,
-  Layers,
   CheckCircle2,
   FileCode,
-  Flame,
-  Zap,
-  Filter,
   Activity,
   ChevronDown,
   ChevronUp,
+  AlertCircle,
+  Bug,
+  Layers,
+  Sparkles,
 } from "lucide-react";
 
 export default function NewCasePage() {
   const router = useRouter();
 
+  const [investigationType, setInvestigationType] = useState<"bug_fix" | "repo_review">("bug_fix");
   const [repoUrl, setRepoUrl] = useState("");
   const [bugDescription, setBugDescription] = useState("");
   const [stackTrace, setStackTrace] = useState("");
@@ -57,35 +55,29 @@ export default function NewCasePage() {
 
   const handleLoadDemo = () => {
     setRepoUrl("c:/GitHub/agent-holmes/test-repos/session-logout-demo");
-    setBugDescription(
-      "Users report getting logged out after token refresh. In Flask, updating session['auth'] in-place does not trigger Set-Cookie without session.modified = True."
-    );
-    setStackTrace("401 Unauthorized: Session cookie missing or stale on GET /api/user/profile");
+    if (investigationType === "repo_review") {
+      setBugDescription(
+        "Comprehensive architecture audit: review authentication, session persistence, code smells, and test suite health."
+      );
+      setStackTrace("Key areas: src/auth/, tests/test_session.py");
+    } else {
+      setBugDescription(
+        "Users report being logged out immediately after token refresh. Flask does not re-issue the session cookie when a nested dict is mutated in-place without setting session.modified = True."
+      );
+      setStackTrace("401 Unauthorized: session cookie missing or stale on GET /api/user/profile");
+    }
     setShowStackTrace(true);
     setError(null);
   };
 
-  const handleLaunchDemoDirectly = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const newCase = await createCase({
-        repo_url: "c:/GitHub/agent-holmes/test-repos/session-logout-demo",
-        bug_description:
-          "Users report getting logged out after token refresh. In Flask, updating session['auth'] in-place does not trigger Set-Cookie without session.modified = True.",
-        stack_trace: "401 Unauthorized on GET /api/user/profile",
-      });
-      router.push(`/cases/${newCase.case_id}`);
-    } catch (err: any) {
-      setError(err?.message || "Failed to launch demo investigation");
-      setLoading(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!repoUrl.trim() || !bugDescription.trim()) {
-      setError("Target repository and bug description are required to begin investigation.");
+    if (!repoUrl.trim()) {
+      setError("Repository path is required.");
+      return;
+    }
+    if (investigationType === "bug_fix" && !bugDescription.trim()) {
+      setError("Bug description is required for targeted bug investigations.");
       return;
     }
 
@@ -95,22 +87,22 @@ export default function NewCasePage() {
     try {
       const newCase = await createCase({
         repo_url: repoUrl.trim(),
-        bug_description: bugDescription.trim(),
+        bug_description: bugDescription.trim() || undefined,
+        case_type: investigationType,
         stack_trace: stackTrace.trim() || undefined,
       });
-
       router.push(`/cases/${newCase.case_id}`);
-    } catch (err: any) {
-      setError(err?.message || "Failed to start investigation");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to start investigation");
       setLoading(false);
     }
   };
 
-  // Metrics
   const solvedCount = recentCases.filter((c) => c.status === "solved").length;
-  const investigatingCount = recentCases.filter((c) => c.status === "investigating").length;
+  const activeCount = recentCases.filter(
+    (c) => c.status === "investigating" || c.status === "pending"
+  ).length;
 
-  // Filtered cases
   const filteredCases = useMemo(() => {
     return recentCases.filter((c) => {
       const matchesStatus =
@@ -126,404 +118,424 @@ export default function NewCasePage() {
   }, [recentCases, filterStatus, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-cyber-grid bg-[#080c16] text-slate-100 flex flex-col selection:bg-sky-500 selection:text-slate-950">
-      {/* Top Cyber Navigation Bar */}
-      <header className="border-b border-slate-800/80 bg-[#080c16]/90 backdrop-blur-md sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+    <div className="min-h-screen bg-cyber-grid bg-[#080c16] text-slate-100 flex flex-col">
+      {/* Navigation */}
+      <header className="border-b border-slate-800/80 bg-[#080c16]/95 backdrop-blur-md sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="relative flex items-center justify-center">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 via-indigo-600 to-cyan-400 p-[1px] shadow-[0_0_20px_rgba(56,189,248,0.35)]">
-              <div className="w-full h-full bg-[#080c16] rounded-xl flex items-center justify-center font-black text-sky-400 text-sm">
-                AH
-              </div>
-            </div>
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400" />
+          <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center font-black text-sky-400 text-xs font-mono">
+            AH
           </div>
-
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold tracking-wider text-slate-100 text-sm">AGENT HOLMES</span>
-              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-sky-950/80 text-sky-400 border border-sky-800/60 font-semibold">
-                BOB 2.0 PROTOCOL
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 font-mono flex items-center gap-1.5">
-              <span>Autonomous Software Forensic Engine</span>
-              <span className="text-slate-600">•</span>
-              <span className="text-sky-300 italic">"Every bug leaves evidence."</span>
+            <span className="font-bold tracking-wider text-slate-100 text-sm font-mono">AGENT HOLMES</span>
+            <p className="text-[11px] text-slate-500 font-mono hidden sm:block">
+              "Every bug leaves evidence."
             </p>
           </div>
         </div>
 
-        {/* Live Diagnostics Pill */}
-        <div className="hidden md:flex items-center gap-4 text-xs font-mono">
-          <div className="flex items-center gap-3 bg-slate-900/90 border border-slate-800 rounded-full px-3.5 py-1.5 shadow-inner">
-            <div className="flex items-center gap-1.5 text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>Git Sandboxing</span>
-            </div>
-            <span className="text-slate-700">|</span>
-            <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${health?.tools.ripgrep.available ? "bg-emerald-400" : "bg-amber-400"}`} />
-              <span className="text-slate-300">{health?.tools.ripgrep.available ? "Ripgrep Engine" : "Py-Regex"}</span>
-            </div>
-            <span className="text-slate-700">|</span>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-sky-400" />
-              <span className="text-slate-300">Pytest Verifier</span>
-            </div>
+        {/* Tool status indicators */}
+        <div className="hidden md:flex items-center gap-3 text-[11px] font-mono text-slate-400">
+          <div className="flex items-center gap-1.5">
+            <span className={`w-1.5 h-1.5 rounded-full ${health?.tools.ripgrep.available ? "bg-emerald-400" : "bg-slate-600"}`} />
+            <span>{health?.tools.ripgrep.available ? "ripgrep" : "py-regex"}</span>
+          </div>
+          <span className="text-slate-700">·</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span>git</span>
+          </div>
+          <span className="text-slate-700">·</span>
+          <div className="flex items-center gap-1.5">
+            <span className={`w-1.5 h-1.5 rounded-full ${health?.tools.docker.available ? "bg-emerald-400" : "bg-slate-600"}`} />
+            <span>{health?.tools.docker.available ? "docker" : "subprocess"}</span>
           </div>
         </div>
       </header>
 
-      {/* Main Content Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8 space-y-12">
-        {/* Hero Section */}
-        <div className="relative pt-4 pb-2 text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-sky-500/10 via-indigo-500/10 to-cyan-500/10 border border-sky-500/30 text-sky-400 text-xs font-mono shadow-[0_0_20px_rgba(56,189,248,0.15)]">
-            <Zap className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
-            <span>AGENTIC INVESTIGATION • HYPOTHESIS LAB • TEST-VERIFIED PATCHES</span>
-          </div>
+      {/* Main */}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8 space-y-10">
 
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white leading-tight">
-            Stop Guessing. <br />
-            <span className="bg-gradient-to-r from-sky-400 via-indigo-300 to-cyan-400 bg-clip-text text-transparent">
-              Trace the Evidence.
-            </span>
-          </h1>
-
-          <p className="text-slate-400 text-sm md:text-base leading-relaxed font-sans">
-            Give Agent Holmes a repository and a failure report. It clones into an isolated sandbox, gathers concrete code citations, tests hypotheses, synthesizes a targeted unified diff, and executes real automated tests before marking the case <span className="text-emerald-400 font-semibold">SOLVED</span>.
-          </p>
-        </div>
-
-        {/* Two-Column Command Center */}
+        {/* Two-column layout: form left, info right */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Launch Form (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="glass-panel rounded-2xl p-6 md:p-8 space-y-6 relative overflow-hidden border border-slate-800/80">
-              {/* Corner tech crosshairs */}
-              <div className="absolute top-2 left-2 text-[10px] font-mono text-slate-700 select-none">[ + ]</div>
-              <div className="absolute top-2 right-2 text-[10px] font-mono text-slate-700 select-none">[ + ]</div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
-                <div>
-                  <h2 className="text-base font-bold tracking-wide text-slate-100 flex items-center gap-2 font-mono">
-                    <Terminal className="w-4 h-4 text-sky-400" />
-                    DISPATCH INVESTIGATOR
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Configure repository sandbox and bug symptoms.
-                  </p>
+          {/* Left — Dispatch form */}
+          <div className="lg:col-span-7">
+            <div className="border border-slate-800 rounded-xl bg-slate-900/30 overflow-hidden">
+              {/* Form header */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-900/60">
+                <div className="flex items-center gap-2">
+                  {investigationType === "repo_review" ? (
+                    <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                  ) : (
+                    <Terminal className="w-3.5 h-3.5 text-sky-400" />
+                  )}
+                  <span className="text-xs font-mono font-semibold text-slate-200 tracking-wider">
+                    {investigationType === "repo_review" ? "REPOSITORY CODE REVIEW & AUDIT" : "NEW BUG INVESTIGATION"}
+                  </span>
                 </div>
-
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={handleLoadDemo}
-                  className="bg-sky-500/10 hover:bg-sky-500/20 border-sky-500/40 text-sky-300 text-xs font-mono h-8 flex items-center gap-1.5 self-start sm:self-auto"
+                  className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-mono h-7 flex items-center gap-1.5"
                 >
-                  <FolderGit2 className="w-3.5 h-3.5 text-sky-400" />
-                  Pre-fill Demo Bug
+                  <FolderGit2 className="w-3.5 h-3.5" />
+                  Load Demo
                 </Button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Mode Switcher */}
+              <div className="p-3 bg-slate-900/80 border-b border-slate-800">
+                <div className="grid grid-cols-2 p-1 bg-[#050914] border border-slate-800 rounded-lg text-xs font-mono">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInvestigationType("bug_fix");
+                      setError(null);
+                    }}
+                    className={`py-2 px-3 rounded-md flex items-center justify-center gap-2 transition-all font-semibold ${
+                      investigationType === "bug_fix"
+                        ? "bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <Bug className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Bug Investigation</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInvestigationType("repo_review");
+                      setError(null);
+                    }}
+                    className={`py-2 px-3 rounded-md flex items-center justify-center gap-2 transition-all font-semibold ${
+                      investigationType === "repo_review"
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Repository Review</span>
+                  </button>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="p-5 space-y-4">
                 {error && (
-                  <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/80 text-rose-300 text-xs flex items-center gap-2.5 font-mono">
+                  <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs flex items-center gap-2 font-mono">
                     <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
                     <span>{error}</span>
                   </div>
                 )}
 
-                {/* Target Repo */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-200 flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <GitBranch className="w-3.5 h-3.5 text-sky-400" />
-                      Target Repository (Local Sandbox or Git Clone URL)
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-mono">ISOLATED SANDBOX</span>
+                {/* Repository */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 font-mono">
+                    <GitBranch className={`w-3 h-3 ${investigationType === "repo_review" ? "text-emerald-400" : "text-sky-400"}`} />
+                    Repository
                   </label>
                   <Input
                     value={repoUrl}
                     onChange={(e) => setRepoUrl(e.target.value)}
-                    placeholder="c:/GitHub/agent-holmes/test-repos/session-logout-demo or https://github.com/..."
-                    className="bg-[#050914] border-slate-800 text-slate-100 placeholder:text-slate-600 font-mono text-xs h-11 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition-all rounded-lg"
+                    placeholder="/local/path/to/repo  or  https://github.com/org/repo"
+                    className="bg-[#050914] border-slate-800 text-slate-100 placeholder:text-slate-600 font-mono text-xs h-10 focus:border-sky-500 rounded-lg"
                   />
                 </div>
 
-                {/* Bug Description */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-200 flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <Search className="w-3.5 h-3.5 text-amber-400" />
-                      Observed Symptom / Issue Description
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-mono">NATURAL LANGUAGE</span>
-                  </label>
+                {/* Bug Description / Audit Focus */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 font-mono">
+                      {investigationType === "repo_review" ? (
+                        <>
+                          <Sparkles className="w-3 h-3 text-emerald-400" />
+                          Audit Focus & Scope
+                          <span className="text-slate-500 text-[10px] font-normal">(Optional)</span>
+                        </>
+                      ) : (
+                        <>
+                          <Search className="w-3 h-3 text-sky-400" />
+                          Bug Description
+                        </>
+                      )}
+                    </label>
+                  </div>
                   <Textarea
                     value={bugDescription}
                     onChange={(e) => setBugDescription(e.target.value)}
                     rows={4}
-                    placeholder="Describe how the bug manifests, what users report, unexpected 401s, failing tests, or invalid responses..."
-                    className="bg-[#050914] border-slate-800 text-slate-100 placeholder:text-slate-600 text-xs leading-relaxed focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition-all rounded-lg"
+                    placeholder={
+                      investigationType === "repo_review"
+                        ? "e.g., General code health, security vulnerabilities, test coverage, session management anti-patterns... (Leave blank for full repository audit)"
+                        : "Describe the observed failure — what users report, unexpected responses, or test failures..."
+                    }
+                    className="bg-[#050914] border-slate-800 text-slate-100 placeholder:text-slate-600 text-xs leading-relaxed focus:border-sky-500 rounded-lg"
                   />
                 </div>
 
-                {/* Collapsible Stack Trace */}
-                <div className="border border-slate-800/80 rounded-xl overflow-hidden bg-[#050914]/50">
+                {/* Stack Trace / Focus notes — collapsible */}
+                <div className="border border-slate-800 rounded-lg overflow-hidden">
                   <button
                     type="button"
                     onClick={() => setShowStackTrace(!showStackTrace)}
-                    className="w-full px-4 py-2.5 flex items-center justify-between text-xs text-slate-400 hover:text-slate-200 font-mono bg-slate-900/40 hover:bg-slate-900 transition-colors"
+                    className="w-full px-4 py-2 flex items-center justify-between text-xs text-slate-400 hover:text-slate-200 font-mono bg-slate-900/60 hover:bg-slate-900 transition-colors"
                   >
                     <span className="flex items-center gap-2">
-                      <FileCode className="w-3.5 h-3.5 text-purple-400" />
-                      Stack Trace / Console Error Log
-                      {stackTrace && <span className="text-[10px] text-purple-400 font-bold">(Attached)</span>}
+                      <FileCode className="w-3 h-3 text-slate-500" />
+                      {investigationType === "repo_review" ? "Focus files / specific notes" : "Stack trace / logs"}
+                      {stackTrace && <span className={investigationType === "repo_review" ? "text-emerald-400 text-[10px]" : "text-sky-400 text-[10px]"}>(attached)</span>}
                     </span>
                     {showStackTrace ? (
-                      <ChevronUp className="w-4 h-4 text-slate-500" />
+                      <ChevronUp className="w-3.5 h-3.5 text-slate-600" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-slate-500" />
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-600" />
                     )}
                   </button>
 
                   {showStackTrace && (
-                    <div className="p-3 border-t border-slate-800/80">
+                    <div className="p-3 border-t border-slate-800">
                       <Textarea
                         value={stackTrace}
                         onChange={(e) => setStackTrace(e.target.value)}
                         rows={3}
-                        placeholder="Paste traceback, 500 error logs, or pytest crash report..."
-                        className="bg-[#03060d] border-slate-800 text-slate-200 placeholder:text-slate-700 font-mono text-[11px] leading-relaxed focus:border-purple-400 rounded-lg"
+                        placeholder={
+                          investigationType === "repo_review"
+                            ? "List specific directories, files, or questions to emphasize during review..."
+                            : "Paste traceback, 500 error logs, or failing pytest output..."
+                        }
+                        className="bg-[#03060d] border-slate-800 text-slate-200 placeholder:text-slate-700 font-mono text-[11px] leading-relaxed focus:border-sky-500 rounded-lg"
                       />
                     </div>
                   )}
                 </div>
 
-                {/* Submit Action */}
-                <div className="pt-2">
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-sky-500 via-indigo-500 to-cyan-400 hover:from-sky-400 hover:to-cyan-300 text-slate-950 font-black text-xs h-12 tracking-wider shadow-[0_0_30px_rgba(56,189,248,0.35)] flex items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                        <span>ISOLATING WORKSPACE & COMMENCING INVESTIGATION...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>COMMENCE AUTONOMOUS INVESTIGATION</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </Button>
-                </div>
+                {/* Submit */}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className={`w-full font-bold text-xs h-11 tracking-wider flex items-center justify-center gap-2 rounded-lg transition-colors ${
+                    investigationType === "repo_review"
+                      ? "bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.25)]"
+                      : "bg-sky-600 hover:bg-sky-500 text-slate-950"
+                  }`}
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                      <span>{investigationType === "repo_review" ? "STARTING AUDIT…" : "STARTING INVESTIGATION…"}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{investigationType === "repo_review" ? "START REPOSITORY REVIEW" : "START INVESTIGATION"}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </Button>
               </form>
             </div>
           </div>
 
-          {/* Right Column: Featured Demo + Protocol Visualizer (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* Featured Demo Showcase Card */}
-            <div className="glass-card rounded-2xl p-6 border-slate-800/90 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
-
-              <div className="flex items-center justify-between mb-3">
-                <Badge className="bg-sky-500/20 text-sky-400 border-sky-500/40 font-mono text-[10px] tracking-wider font-bold">
-                  FEATURED CASE STUDY
-                </Badge>
-                <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> VERIFIED DEMO
+          {/* Right — workflow + demo */}
+          <div className="lg:col-span-5 space-y-5">
+            {/* Demo case card */}
+            <div className="border border-slate-800 rounded-xl bg-slate-900/30 p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono text-slate-400 tracking-wider">
+                  {investigationType === "repo_review" ? "SAMPLE AUDIT TARGET" : "DEMO BUG CASE"}
                 </span>
+                <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] font-mono">
+                  <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
+                  VERIFIED
+                </Badge>
               </div>
 
-              <h3 className="text-base font-bold text-white mb-2 group-hover:text-sky-300 transition-colors">
-                The Phantom Session Logout Bug
-              </h3>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-100 mb-1">
+                  {investigationType === "repo_review"
+                    ? "Full Codebase Quality & Architecture Review"
+                    : "The Phantom Session Logout Bug"}
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {investigationType === "repo_review"
+                    ? "Audit code structure, state persistence, exception handling, and baseline test suite health without requiring a prior bug report."
+                    : "Users are logged out after token refresh. Flask silently skips re-issuing the Set-Cookie header when session.modified is never set."}
+                </p>
+              </div>
 
-              <p className="text-xs text-slate-300 leading-relaxed font-sans mb-4">
-                Users spontaneously get logged out immediately after automatic token refresh. Flask omits the <code className="text-sky-300 font-mono bg-slate-900 px-1 py-0.5 rounded">Set-Cookie</code> header on in-place dictionary mutations unless <code className="text-emerald-300 font-mono bg-slate-900 px-1 py-0.5 rounded">session.modified = True</code> is flagged.
-              </p>
-
-              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] font-mono space-y-1.5 mb-4 text-slate-400">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">TARGET:</span>
-                  <span className="text-slate-200">session-logout-demo/</span>
+              <div className="text-[11px] font-mono border border-slate-800 rounded-lg divide-y divide-slate-800">
+                <div className="flex justify-between px-3 py-1.5">
+                  <span className="text-slate-500">Repo</span>
+                  <span className="text-slate-300">session-logout-demo/</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">TEST STATUS:</span>
-                  <span className="text-amber-400">1 Failed, 3 Passed (Pre-Fix)</span>
+                <div className="flex justify-between px-3 py-1.5">
+                  <span className="text-slate-500">Mode</span>
+                  <span className={investigationType === "repo_review" ? "text-emerald-400" : "text-sky-400"}>
+                    {investigationType === "repo_review" ? "Repository Review" : "Bug Investigation"}
+                  </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">POST-FIX GOAL:</span>
-                  <span className="text-emerald-400 font-bold">4 Passed (Verified)</span>
+                <div className="flex justify-between px-3 py-1.5">
+                  <span className="text-slate-500">Output</span>
+                  <span className="text-slate-300">
+                    {investigationType === "repo_review" ? "Quality & Architecture Report" : "Verified Patch & Diff"}
+                  </span>
                 </div>
               </div>
 
               <Button
-                onClick={handleLaunchDemoDirectly}
+                onClick={handleLoadDemo}
                 disabled={loading}
-                className="w-full bg-slate-900 hover:bg-slate-800 border border-sky-500/40 text-sky-300 hover:text-white font-mono text-xs h-10 flex items-center justify-center gap-2 rounded-xl transition-all shadow-[0_0_15px_rgba(56,189,248,0.1)]"
+                variant="outline"
+                className="w-full border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-mono text-xs h-9"
               >
-                <Flame className="w-3.5 h-3.5 text-amber-400" />
-                <span>1-Click Launch Demo Case Study</span>
+                Pre-fill Demo Fields
               </Button>
             </div>
 
-            {/* Forensic Workflow Visualizer */}
-            <div className="glass-panel rounded-2xl p-5 border-slate-800/80 space-y-3 font-mono text-xs">
-              <div className="flex items-center gap-2 text-slate-300 font-bold tracking-wider text-[11px] border-b border-slate-800/80 pb-2">
-                <Layers className="w-3.5 h-3.5 text-sky-400" />
-                THE 5-STEP FORENSIC PIPELINE
-              </div>
-
-              <div className="space-y-2.5 text-[11px]">
-                <div className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800/60">
-                  <span className="w-5 h-5 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-[10px]">1</span>
-                  <div>
-                    <span className="text-slate-200 font-semibold">Sandbox Discovery:</span>
-                    <span className="text-slate-400 ml-1">Clones target & builds safe workspace directory</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800/60">
-                  <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-[10px]">2</span>
-                  <div>
-                    <span className="text-slate-200 font-semibold">Code Evidence Search:</span>
-                    <span className="text-slate-400 ml-1">Ripgrep locates offending routes & handlers</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800/60">
-                  <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-[10px]">3</span>
-                  <div>
-                    <span className="text-slate-200 font-semibold">Hypothesis Testing:</span>
-                    <span className="text-slate-400 ml-1">Ranks probabilistic failure rationales</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800/60">
-                  <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-[10px]">4</span>
-                  <div>
-                    <span className="text-slate-200 font-semibold">Surgical Patching:</span>
-                    <span className="text-slate-400 ml-1">Generates minimal unified git diff</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800/60">
-                  <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px]">5</span>
-                  <div>
-                    <span className="text-slate-200 font-semibold">Automated Verification:</span>
-                    <span className="text-emerald-400 ml-1">Pytest confirms fix before claiming SOLVED</span>
-                  </div>
-                </div>
-              </div>
+            {/* Pipeline steps */}
+            <div className="border border-slate-800 rounded-xl bg-slate-900/30 p-5">
+              <span className="text-[10px] font-mono text-slate-500 tracking-wider block mb-3">
+                {investigationType === "repo_review" ? "REVIEW PIPELINE" : "INVESTIGATION PIPELINE"}
+              </span>
+              <ol className="space-y-2">
+                {(investigationType === "repo_review"
+                  ? [
+                      ["1", "Sandbox Discovery", "Catalog workspace & project structure"],
+                      ["2", "Code Scan", "Locate entrypoints & core logic"],
+                      ["3", "Findings Lab", "Audit architecture & code smells"],
+                      ["4", "Recommendations", "Formulate refactoring opportunities"],
+                      ["5", "Test Suite Health", "Execute baseline automated tests"],
+                    ]
+                  : [
+                      ["1", "Sandbox Discovery", "Clone & isolate in workspace"],
+                      ["2", "Evidence Search", "ripgrep symbol scan"],
+                      ["3", "Hypothesis Lab", "Rank root causes by evidence"],
+                      ["4", "Patch Synthesis", "Minimal unified diff"],
+                      ["5", "Verified Fix", "pytest must pass"],
+                    ]
+                ).map(([num, title, desc]) => (
+                  <li key={num} className="flex items-start gap-2.5 text-xs">
+                    <span className="w-4 h-4 rounded-full bg-slate-800 border border-slate-700 text-slate-400 flex items-center justify-center font-mono text-[10px] shrink-0 mt-0.5">
+                      {num}
+                    </span>
+                    <div>
+                      <span className="text-slate-200 font-semibold">{title}</span>
+                      <span className="text-slate-500 ml-2">{desc}</span>
+                    </div>
+                  </li>
+                ))}
+              </ol>
             </div>
           </div>
         </div>
 
-        {/* Recent Cases Section */}
+        {/* Case Archives */}
         {recentCases.length > 0 && (
-          <div className="space-y-5 pt-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
-              <div>
-                <h3 className="text-sm font-bold tracking-wider text-slate-100 flex items-center gap-2 font-mono">
-                  <Activity className="w-4 h-4 text-sky-400" />
-                  CASE ARCHIVES ({recentCases.length})
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Historical bug investigations and verification records.
-                </p>
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-sky-400" />
+                <span className="text-xs font-mono font-semibold text-slate-200 tracking-wider">
+                  CASE ARCHIVES
+                </span>
+                <span className="text-[10px] font-mono text-slate-500">
+                  {recentCases.length} total · {solvedCount} solved · {activeCount} active
+                </span>
               </div>
 
-              {/* Status Filters and Search */}
-              <div className="flex items-center gap-2.5 flex-wrap">
+              {/* Filters */}
+              <div className="flex items-center gap-2">
                 <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                  <Search className="w-3 h-3 text-slate-600 absolute left-2.5 top-2" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Filter by ID or symptom..."
-                    className="bg-[#050914] border border-slate-800 rounded-lg pl-8 pr-3 py-1 text-xs font-mono text-slate-200 placeholder:text-slate-600 h-8 w-44 focus:w-56 transition-all focus:border-sky-500 focus:outline-none"
+                    placeholder="Search cases…"
+                    className="bg-[#050914] border border-slate-800 rounded-lg pl-7 pr-3 py-1.5 text-xs font-mono text-slate-200 placeholder:text-slate-600 w-40 focus:w-52 transition-all focus:border-sky-600 focus:outline-none"
                   />
                 </div>
 
-                <div className="flex items-center bg-slate-900/80 border border-slate-800 rounded-lg p-0.5 text-xs font-mono">
-                  <button
-                    onClick={() => setFilterStatus("all")}
-                    className={`px-2.5 py-1 rounded transition-colors ${
-                      filterStatus === "all" ? "bg-slate-800 text-sky-300 font-bold" : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    All ({recentCases.length})
-                  </button>
-                  <button
-                    onClick={() => setFilterStatus("solved")}
-                    className={`px-2.5 py-1 rounded transition-colors ${
-                      filterStatus === "solved" ? "bg-emerald-950 text-emerald-300 font-bold" : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    Solved ({solvedCount})
-                  </button>
-                  {investigatingCount > 0 && (
+                <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-xs font-mono">
+                  {(["all", "solved", "failed"] as const).map((s) => (
                     <button
-                      onClick={() => setFilterStatus("investigating")}
-                      className={`px-2.5 py-1 rounded transition-colors ${
-                        filterStatus === "investigating" ? "bg-amber-950 text-amber-300 font-bold" : "text-slate-400 hover:text-slate-200"
+                      key={s}
+                      onClick={() => setFilterStatus(s)}
+                      className={`px-2.5 py-1 rounded transition-colors capitalize ${
+                        filterStatus === s
+                          ? s === "solved"
+                            ? "bg-emerald-950 text-emerald-300 font-semibold"
+                            : s === "failed"
+                            ? "bg-rose-950 text-rose-300 font-semibold"
+                            : "bg-slate-800 text-sky-300 font-semibold"
+                          : "text-slate-500 hover:text-slate-300"
                       }`}
                     >
-                      Active ({investigatingCount})
+                      {s}
                     </button>
-                  )}
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Case Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {filteredCases.map((c) => {
                 const isSolved = c.status === "solved";
-                const isInvestigating = c.status === "investigating";
+                const isFailed = c.status === "failed";
+                const isCaseReview = c.case_type === "repo_review";
+                const repoName =
+                  c.repo_url
+                    .replace(/\\+/g, "/")
+                    .replace(/\/+$/, "")
+                    .replace(/\.git$/, "")
+                    .split("/")
+                    .pop() || "Repository";
+                const shortId = c.case_id.replace(/^case_/, "");
 
                 return (
                   <Link key={c.case_id} href={`/cases/${c.case_id}`}>
-                    <div className="glass-card rounded-xl p-4.5 border-slate-800/80 hover:border-slate-700 transition-all hover:translate-y-[-2px] group space-y-3 h-full flex flex-col justify-between">
+                    <div className="border border-slate-800 hover:border-slate-700 rounded-xl p-4 bg-slate-900/30 hover:bg-slate-900/60 transition-colors group space-y-3 h-full flex flex-col justify-between">
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-xs text-sky-400 font-bold group-hover:text-sky-300">
-                            {c.case_id}
-                          </span>
-                          <Badge
-                            className={
-                              isSolved
-                                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-[10px]"
-                                : isInvestigating
-                                ? "bg-amber-500/20 text-amber-400 border-amber-500/40 animate-pulse text-[10px]"
-                                : "bg-slate-800 text-slate-400 border-slate-700 text-[10px]"
-                            }
-                          >
-                            {c.status.toUpperCase()}
-                          </Badge>
+                          <div className="flex items-baseline gap-1.5 truncate max-w-[65%]">
+                            <span className="font-semibold text-sm text-slate-200 group-hover:text-sky-300 truncate font-sans">
+                              {repoName}
+                            </span>
+                            <span className="font-mono text-[10px] text-slate-500 shrink-0">
+                              #{shortId}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {isCaseReview && (
+                              <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[9px] font-mono px-1.5 py-0">
+                                REVIEW
+                              </Badge>
+                            )}
+                            <Badge
+                              className={
+                                isSolved
+                                  ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] font-mono"
+                                  : isFailed
+                                  ? "bg-rose-500/15 text-rose-400 border-rose-500/30 text-[10px] font-mono"
+                                  : "bg-sky-500/15 text-sky-400 border-sky-500/30 text-[10px] font-mono"
+                              }
+                            >
+                              {c.status.toUpperCase()}
+                            </Badge>
+                          </div>
                         </div>
 
-                        <p className="text-xs text-slate-200 line-clamp-2 leading-relaxed font-sans">
+                        <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed font-sans">
                           {c.bug_description}
                         </p>
                       </div>
 
                       <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] font-mono text-slate-500">
-                        <span className="truncate max-w-[160px] text-slate-400">
-                          {c.repo_url.split("/").pop() || c.repo_url}
+                        <span className="truncate max-w-[65%] text-slate-400" title={c.repo_url}>
+                          {c.repo_url}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-slate-600" />
+                        <span className="flex items-center gap-1 shrink-0">
+                          <Clock className="w-3 h-3" />
                           {new Date(c.created_at).toLocaleDateString()}
                         </span>
                       </div>
@@ -532,6 +544,15 @@ export default function NewCasePage() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {recentCases.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 text-slate-600 space-y-2 text-sm">
+            <AlertCircle className="w-7 h-7 text-slate-700" />
+            <p className="font-mono">No investigations yet.</p>
+            <p className="text-xs text-slate-700">Submit the form above to start your first case.</p>
           </div>
         )}
       </main>
