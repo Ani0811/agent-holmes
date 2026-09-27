@@ -70,7 +70,7 @@ export function EvidenceBoard({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-400">
             <span className="w-2 h-2 rounded-full bg-cyan-400" />
             <span>Scene</span>
@@ -87,7 +87,7 @@ export function EvidenceBoard({
       </div>
 
       {/* Main Forensic Canvas */}
-      <div className="relative p-6 rounded-2xl bg-[#050811] border border-slate-800/90 overflow-x-auto min-h-[580px] bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px]">
+      <div className="relative p-4 sm:p-6 rounded-2xl bg-[#050811] border border-slate-800/90 overflow-x-auto min-h-[580px] bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px]">
         {/* Subtle Decorative Laser Banner */}
         <div className="absolute top-3 left-6 right-6 flex items-center justify-between text-[10px] font-mono text-slate-600 border-b border-slate-800/60 pb-2">
           <span>FORENSIC NODE CHAIN: CASE #{shortId}</span>

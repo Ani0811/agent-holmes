@@ -16,9 +16,9 @@ services:
       - key: WORKSPACES_DIR
         value: /tmp/workspaces
       - key: FRONTEND_URL
-        sync: false
+        value: https://agent-holmes-zeta.vercel.app
       - key: CORS_ORIGINS
-        sync: false
+        value: https://agent-holmes-zeta.vercel.app
       - key: DATABASE_URL
         fromDatabase:
           name: agent-holmes-db

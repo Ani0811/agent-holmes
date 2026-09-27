@@ -121,12 +121,12 @@ export default function NewCasePage() {
   return (
     <div className="min-h-screen bg-cyber-grid bg-[#080c16] text-slate-100 flex flex-col">
       {/* Navigation */}
-      <header className="border-b border-slate-800/80 bg-[#080c16]/95 backdrop-blur-md sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <DetectiveIcon size={34} />
+      <header className="border-b border-slate-800/80 bg-[#080c16]/95 backdrop-blur-md sticky top-0 z-50 px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <DetectiveIcon size={32} />
           <div>
-            <span className="font-bold tracking-wider text-slate-100 text-sm font-mono">AGENT HOLMES</span>
-            <p className="text-[11px] text-slate-500 font-mono hidden sm:block">
+            <span className="font-bold tracking-wider text-slate-100 text-xs sm:text-sm font-mono">AGENT HOLMES</span>
+            <p className="text-[10px] sm:text-[11px] text-slate-500 font-mono hidden sm:block">
               "Every bug leaves evidence."
             </p>
           </div>
@@ -152,7 +152,7 @@ export default function NewCasePage() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8 space-y-10">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-10">
 
         {/* Two-column layout: form left, info right */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -443,19 +443,19 @@ export default function NewCasePage() {
               </div>
 
               {/* Filters */}
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="w-3 h-3 text-slate-600 absolute left-2.5 top-2" />
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:flex-initial">
+                  <Search className="w-3 h-3 text-slate-600 absolute left-2.5 top-2.5" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search cases…"
-                    className="bg-[#050914] border border-slate-800 rounded-lg pl-7 pr-3 py-1.5 text-xs font-mono text-slate-200 placeholder:text-slate-600 w-40 focus:w-52 transition-all focus:border-sky-600 focus:outline-none"
+                    className="bg-[#050914] border border-slate-800 rounded-lg pl-7 pr-3 py-1.5 text-xs font-mono text-slate-200 placeholder:text-slate-600 w-full sm:w-44 sm:focus:w-56 transition-all focus:border-sky-600 focus:outline-none"
                   />
                 </div>
 
-                <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-xs font-mono">
+                <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-xs font-mono shrink-0">
                   {(["all", "solved", "failed"] as const).map((s) => (
                     <button
                       key={s}

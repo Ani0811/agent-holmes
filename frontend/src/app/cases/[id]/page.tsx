@@ -288,39 +288,40 @@ export default function CaseInvestigationPage({
   return (
     <div className="min-h-screen bg-cyber-grid bg-[#080c16] text-slate-100 flex flex-col">
       {/* Header */}
-      <header className="border-b border-slate-800/80 bg-[#080c16]/95 backdrop-blur-md px-6 py-3 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-3">
+      <header className="border-b border-slate-800/80 bg-[#080c16]/95 backdrop-blur-md px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 sticky top-0 z-50">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link href="/">
             <Button
               variant="outline"
               size="sm"
-              className="h-8 border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-slate-300 text-xs font-mono"
+              className="h-8 px-2 sm:px-3 border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-slate-300 text-xs font-mono"
             >
-              <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Dossiers
+              <ArrowLeft className="w-3.5 h-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">Dossiers</span>
             </Button>
           </Link>
-          <div className="h-4 w-px bg-slate-800" />
-          <div className="flex items-center gap-2.5">
+          <div className="h-4 w-px bg-slate-800 shrink-0" />
+          <div className="flex items-center gap-2 min-w-0">
             <DetectiveIcon size={22} variant="minimal" />
-            <div className="flex items-baseline gap-2">
-              <span className="font-semibold text-sm text-slate-100 font-sans tracking-tight">
+            <div className="flex items-baseline gap-1.5 sm:gap-2 min-w-0">
+              <span className="font-semibold text-xs sm:text-sm text-slate-100 font-sans tracking-tight truncate max-w-[90px] sm:max-w-[200px] md:max-w-none">
                 {repoName || "Investigation"}
               </span>
-              <span className="font-mono text-xs text-sky-400/90 font-bold bg-sky-950/40 border border-sky-800/40 px-1.5 py-0.5 rounded">
+              <span className="font-mono text-[10px] sm:text-xs text-sky-400/90 font-bold bg-sky-950/40 border border-sky-800/40 px-1 sm:px-1.5 py-0.5 rounded shrink-0">
                 #{dossierId}
               </span>
             </div>
             {caseData && (
-              <Badge className={statusBadgeClass}>
+              <Badge className={`${statusBadgeClass} hidden sm:inline-flex shrink-0`}>
                 {isReview ? "AUDIT · " : ""}{caseData.status.toUpperCase()}
               </Badge>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {/* Timer */}
-          <div className="hidden sm:flex items-center gap-1.5 font-mono text-xs text-slate-400 bg-slate-900/60 border border-slate-800 px-3 py-1 rounded-full">
+          <div className="hidden md:flex items-center gap-1.5 font-mono text-xs text-slate-400 bg-slate-900/60 border border-slate-800 px-3 py-1 rounded-full">
             <Clock className="w-3.5 h-3.5 text-sky-400" />
             <span className="text-slate-200 tabular-nums">{formatTimer(secondsElapsed)}</span>
             {isSolved !== null && (
@@ -329,11 +330,11 @@ export default function CaseInvestigationPage({
           </div>
 
           {/* View switcher — accessible for Console, Evidence Board, and Verdict */}
-          <div className="flex items-center bg-slate-900/90 rounded-lg p-0.5 border border-slate-800 font-mono text-xs">
+          <div className="flex items-center bg-slate-900/90 rounded-lg p-0.5 border border-slate-800 font-mono text-[11px] sm:text-xs">
             {reportData && (
               <button
                 onClick={() => setViewMode("resolution")}
-                className={`px-3 py-1 rounded-md transition-all ${
+                className={`px-2 sm:px-3 py-1 rounded-md transition-all ${
                   viewMode === "resolution"
                     ? "bg-emerald-500/20 text-emerald-300 font-bold"
                     : "text-slate-400 hover:text-slate-200"
@@ -344,18 +345,18 @@ export default function CaseInvestigationPage({
             )}
             <button
               onClick={() => setViewMode("board")}
-              className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all ${
+              className={`px-2 sm:px-2.5 py-1 rounded-md flex items-center gap-1 sm:gap-1.5 transition-all ${
                 viewMode === "board"
                   ? "bg-indigo-500/20 text-indigo-300 font-bold"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              <Layers className="w-3.5 h-3.5 text-indigo-400" />
-              Evidence Board
+              <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-indigo-400" />
+              <span><span className="hidden sm:inline">Evidence </span>Board</span>
             </button>
             <button
               onClick={() => setViewMode("investigation")}
-              className={`px-3 py-1 rounded-md transition-all ${
+              className={`px-2 sm:px-3 py-1 rounded-md transition-all ${
                 viewMode === "investigation"
                   ? "bg-sky-500/20 text-sky-300 font-bold"
                   : "text-slate-400 hover:text-slate-200"
@@ -369,7 +370,7 @@ export default function CaseInvestigationPage({
             variant="outline"
             size="sm"
             onClick={() => fetchFullCase(false)}
-            className="h-8 border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-slate-300"
+            className="h-7 w-7 sm:h-8 sm:w-8 p-0 border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-slate-300 shrink-0"
             title="Refresh"
           >
             <RefreshCw className="w-3.5 h-3.5" />
