@@ -15,7 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-8QZCCV5PJ3";
-const GOOGLE_VERIFICATION = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
+const GOOGLE_VERIFICATION =
+  process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "HqBnimt72uwHxGH3DOttB9jhbrZcH8LBZlFWtVBfqDY";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://agent-holmes-zeta.vercel.app"),
