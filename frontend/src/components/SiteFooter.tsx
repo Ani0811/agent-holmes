@@ -2,7 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { Shield, FileText, Scale, Terminal, Sparkles } from "lucide-react";
+import { Shield, FileText, Scale, Sparkles } from "lucide-react";
+import { DetectiveIcon } from "@/components/DetectiveIcon";
 
 export function SiteFooter() {
   return (
@@ -12,7 +13,7 @@ export function SiteFooter() {
           {/* Left: Branding & Hackathon Tag */}
           <div className="flex flex-wrap items-center gap-3 text-center md:text-left">
             <Link href="/" className="flex items-center gap-2 text-slate-200 hover:text-white font-mono font-bold tracking-wider transition-colors">
-              <Terminal className="w-4 h-4 text-emerald-400" />
+              <DetectiveIcon size={18} variant="minimal" />
               <span>AGENT HOLMES</span>
             </Link>
             <span className="text-slate-600 hidden sm:inline">|</span>

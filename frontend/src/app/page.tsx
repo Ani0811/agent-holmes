@@ -26,6 +26,7 @@ import {
   Layers,
   Sparkles,
 } from "lucide-react";
+import { DetectiveIcon } from "@/components/DetectiveIcon";
 
 export default function NewCasePage() {
   const router = useRouter();
@@ -122,9 +123,7 @@ export default function NewCasePage() {
       {/* Navigation */}
       <header className="border-b border-slate-800/80 bg-[#080c16]/95 backdrop-blur-md sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center font-black text-sky-400 text-xs font-mono">
-            AH
-          </div>
+          <DetectiveIcon size={34} />
           <div>
             <span className="font-bold tracking-wider text-slate-100 text-sm font-mono">AGENT HOLMES</span>
             <p className="text-[11px] text-slate-500 font-mono hidden sm:block">

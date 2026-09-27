@@ -25,6 +25,7 @@ import {
   AlertCircle,
   Layers,
 } from "lucide-react";
+import { DetectiveIcon } from "@/components/DetectiveIcon";
 
 const BUG_PHASES = [
   { key: "discovery", label: "Discovery" },
@@ -300,7 +301,7 @@ export default function CaseInvestigationPage({
           </Link>
           <div className="h-4 w-px bg-slate-800" />
           <div className="flex items-center gap-2.5">
-            <Terminal className="w-3.5 h-3.5 text-sky-400" />
+            <DetectiveIcon size={22} variant="minimal" />
             <div className="flex items-baseline gap-2">
               <span className="font-semibold text-sm text-slate-100 font-sans tracking-tight">
                 {repoName || "Investigation"}
