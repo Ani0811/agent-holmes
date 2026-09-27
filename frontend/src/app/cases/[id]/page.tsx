@@ -10,6 +10,7 @@ import { HypothesisPanel } from "@/components/HypothesisPanel";
 import { DiffViewer } from "@/components/DiffViewer";
 import { VerificationPanel } from "@/components/VerificationPanel";
 import { CaseReport } from "@/components/CaseReport";
+import { EvidenceBoard } from "@/components/EvidenceBoard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -22,6 +23,7 @@ import {
   Terminal,
   Clock,
   AlertCircle,
+  Layers,
 } from "lucide-react";
 
 const BUG_PHASES = [
@@ -57,7 +59,7 @@ export default function CaseInvestigationPage({
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("evidence");
-  const [viewMode, setViewMode] = useState<"investigation" | "resolution">("investigation");
+  const [viewMode, setViewMode] = useState<"investigation" | "resolution" | "board">("investigation");
   const [secondsElapsed, setSecondsElapsed] = useState(0);
 
   const isReview = caseData?.case_type === "repo_review";
@@ -325,9 +327,9 @@ export default function CaseInvestigationPage({
             )}
           </div>
 
-          {/* View switcher — only visible when report is available */}
-          {reportData && (
-            <div className="flex items-center bg-slate-900/90 rounded-lg p-0.5 border border-slate-800 font-mono text-xs">
+          {/* View switcher — accessible for Console, Evidence Board, and Verdict */}
+          <div className="flex items-center bg-slate-900/90 rounded-lg p-0.5 border border-slate-800 font-mono text-xs">
+            {reportData && (
               <button
                 onClick={() => setViewMode("resolution")}
                 className={`px-3 py-1 rounded-md transition-all ${
@@ -338,18 +340,29 @@ export default function CaseInvestigationPage({
               >
                 Verdict
               </button>
-              <button
-                onClick={() => setViewMode("investigation")}
-                className={`px-3 py-1 rounded-md transition-all ${
-                  viewMode === "investigation"
-                    ? "bg-sky-500/20 text-sky-300 font-bold"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                Console
-              </button>
-            </div>
-          )}
+            )}
+            <button
+              onClick={() => setViewMode("board")}
+              className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all ${
+                viewMode === "board"
+                  ? "bg-indigo-500/20 text-indigo-300 font-bold"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 text-indigo-400" />
+              Evidence Board
+            </button>
+            <button
+              onClick={() => setViewMode("investigation")}
+              className={`px-3 py-1 rounded-md transition-all ${
+                viewMode === "investigation"
+                  ? "bg-sky-500/20 text-sky-300 font-bold"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Console
+            </button>
+          </div>
 
           <Button
             variant="outline"
@@ -434,9 +447,23 @@ export default function CaseInvestigationPage({
           </div>
         )}
 
-        {/* Resolution or Investigation view */}
-        {viewMode === "resolution" && reportData ? (
-          <CaseReport report={reportData} />
+        {/* Evidence Board, Resolution Verdict, or Investigation console view */}
+        {viewMode === "board" ? (
+          <EvidenceBoard
+            repoUrl={caseData?.repo_url || reportData?.repo_url || ""}
+            caseId={caseId}
+            evidence={caseData?.evidence || reportData?.key_evidence || []}
+            hypotheses={caseData?.hypotheses || (reportData?.winning_hypothesis ? [reportData.winning_hypothesis] : [])}
+            patch={caseData?.patches?.[caseData.patches.length - 1] || reportData?.patch || null}
+            verification={caseData?.test_results?.[caseData.test_results.length - 1] || reportData?.verification || null}
+            rootCause={reportData?.root_cause || caseData?.bug_description || null}
+            isSolved={caseData?.status === "solved" || reportData?.solved || false}
+          />
+        ) : viewMode === "resolution" && reportData ? (
+          <CaseReport
+            report={reportData}
+            onViewBoard={() => setViewMode("board")}
+          />
         ) : (
           /* Investigation console: feed (7 cols) + exhibit tabs (5 cols) */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5" style={{ minHeight: "70vh" }}>

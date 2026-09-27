@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -12,13 +10,16 @@ services:
       - ./backend:/app
       - ./test-repos:/test-repos
       - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=sqlite:///./holmes.db
       - AI_PROVIDER=${AI_PROVIDER:-bob}
-      - BOB_API_BASE=${BOB_API_BASE:-http://localhost:11434}
+      - BOB_API_BASE=${BOB_API_BASE:-http://host.docker.internal:11434}
       - BOB_API_KEY=${BOB_API_KEY:-}
       - BOB_MODEL=${BOB_MODEL:-ibm-granite-code}
+      - VERIFICATION_BACKEND=${VERIFICATION_BACKEND:-auto}
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
@@ -28,7 +29,12 @@ services:
     container_name: holmes-frontend
     ports:
       - "3000:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
       - NEXT_PUBLIC_API_URL=http://localhost:8000
       - NEXT_PUBLIC_WS_URL=ws://localhost:8000
     depends_on:

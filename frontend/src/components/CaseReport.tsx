@@ -6,18 +6,33 @@ import { CaseReport as CaseReportType } from "@/lib/api";
 import { DiffViewer } from "./DiffViewer";
 import { VerificationPanel } from "./VerificationPanel";
 import { EvidencePanel } from "./EvidencePanel";
+import { GitPatchModal } from "./GitPatchModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { CheckCircle2, XCircle, ArrowLeft, Code, FileText, Check, Sparkles, Download, AlertOctagon } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  ArrowLeft,
+  Code,
+  FileText,
+  Check,
+  Sparkles,
+  Download,
+  AlertOctagon,
+  GitPullRequest,
+  Layers,
+} from "lucide-react";
 
 interface Props {
   report: CaseReportType;
+  onViewBoard?: () => void;
 }
 
-export function CaseReport({ report }: Props) {
+export function CaseReport({ report, onViewBoard }: Props) {
   const [showJson, setShowJson] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showPatchModal, setShowPatchModal] = useState(false);
   const isReview = report.case_type === "repo_review";
   const isFailed = report.status === "failed";
 
@@ -158,6 +173,32 @@ export function CaseReport({ report }: Props) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 self-stretch md:self-auto justify-end">
+          {onViewBoard && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onViewBoard}
+              className="border-indigo-500/40 bg-indigo-950/40 hover:bg-indigo-900/60 text-indigo-300 hover:text-white font-mono text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(99,102,241,0.15)]"
+              title="Open interactive detective crime board"
+            >
+              <Layers className="w-3.5 h-3.5 text-indigo-400" />
+              Evidence Board
+            </Button>
+          )}
+
+          {report.patch && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPatchModal(true)}
+              className="border-emerald-500/50 bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 hover:text-white font-mono text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+              title="Export raw .patch file or generate GitHub Pull Request"
+            >
+              <GitPullRequest className="w-3.5 h-3.5 text-emerald-400" />
+              Export Patch / PR
+            </Button>
+          )}
+
           <Button
             variant="outline"
             size="sm"
@@ -288,6 +329,13 @@ export function CaseReport({ report }: Props) {
           <EvidencePanel evidence={report.key_evidence} />
         </div>
       </div>
+
+      {/* 1-Click Git Patch & GitHub PR Generator Modal */}
+      <GitPatchModal
+        report={report}
+        isOpen={showPatchModal}
+        onClose={() => setShowPatchModal(false)}
+      />
     </div>
   );
 }
