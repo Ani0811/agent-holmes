@@ -44,6 +44,12 @@ async def root():
     }
 
 
+@app.get("/health")
+async def health():
+    """Lightweight production health check returning standard ok status."""
+    return {"status": "ok"}
+
+
 # Include Routers
 app.include_router(cases_router, prefix=settings.API_PREFIX)
 app.include_router(health_router, prefix=settings.API_PREFIX)

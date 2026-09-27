@@ -21,3 +21,10 @@ def test_health_endpoint():
     assert "git" in data["tools"]
     assert "ripgrep" in data["tools"]
     assert "docker" in data["tools"]
+
+
+def test_root_health_endpoint():
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
