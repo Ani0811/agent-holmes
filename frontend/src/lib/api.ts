@@ -69,7 +69,7 @@ export interface InvestigationEvent {
   case_id: string;
   event_type: string;
   message: string;
-  data?: Record<string, any> | null;
+  data?: Record<string, unknown> | null;
   timestamp: string;
   is_replay?: boolean;
 }

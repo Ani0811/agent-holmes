@@ -130,7 +130,9 @@ export default function CaseInvestigationPage({
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchFullCase(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseId]);
 
   // Refresh case artifacts only when *new* actionable events arrive — not on
@@ -157,6 +159,7 @@ export default function CaseInvestigationPage({
     } else {
       lastFetchedAtEventCount.current = events.length;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events.length]);
 
   const currentPhaseIndex = (() => {

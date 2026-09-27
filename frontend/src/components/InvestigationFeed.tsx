@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { InvestigationEvent } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronDown, ChevronRight, Terminal, AlertCircle, CheckCircle2, Search, FileCode, Wrench } from "lucide-react";
 
 interface Props {

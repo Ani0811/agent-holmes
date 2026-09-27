@@ -3,18 +3,15 @@
 import React, { useState } from "react";
 import { EvidenceItem, Hypothesis, Patch, TestResult } from "@/lib/api";
 import {
-  FileCode,
   GitBranch,
   ShieldCheck,
   CheckCircle2,
-  AlertCircle,
   Sparkles,
   Layers,
   ChevronDown,
   ChevronUp,
   Brain,
   Wrench,
-  Activity,
   Pin,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

@@ -42,7 +42,7 @@ export function useInvestigationStream(caseId?: string) {
           const payload: InvestigationEvent = JSON.parse(event.data);
 
           // Ignore pong heartbeats
-          if ((payload as any).type === "pong") return;
+          if ((payload as unknown as Record<string, unknown>).type === "pong") return;
 
           setEvents((prev) => {
             // Avoid duplicate events if replayed with matching IDs
@@ -53,8 +53,9 @@ export function useInvestigationStream(caseId?: string) {
           });
 
           // Track state transitions
-          if (payload.event_type === "phase_change" && payload.data?.phase) {
-            setPhase(payload.data.phase);
+          const phaseVal = (payload.data as Record<string, string> | null | undefined)?.phase;
+          if (payload.event_type === "phase_change" && phaseVal) {
+            setPhase(phaseVal);
           } else if (payload.event_type === "case_solved") {
             setIsSolved(true);
             setPhase("report");
@@ -79,9 +80,9 @@ export function useInvestigationStream(caseId?: string) {
           clearInterval(pingIntervalRef.current);
         }
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (!isIntentionalCloseRef.current) {
-        setError(err?.message || "Failed to initiate WebSocket connection");
+        setError(err instanceof Error ? err.message : "Failed to initiate WebSocket connection");
       }
     }
   }, [caseId]);

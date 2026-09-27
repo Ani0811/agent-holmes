@@ -127,7 +127,7 @@ export default function NewCasePage() {
           <div>
             <span className="font-bold tracking-wider text-slate-100 text-xs sm:text-sm font-mono">AGENT HOLMES</span>
             <p className="text-[10px] sm:text-[11px] text-slate-500 font-mono hidden sm:block">
-              "Every bug leaves evidence."
+              &ldquo;Every bug leaves evidence.&rdquo;
             </p>
           </div>
         </div>
