@@ -158,5 +158,21 @@ agent-holmes/
 │   └── package.json
 ├── test-repos/              # Demo repositories (e.g. session-logout-demo)
 ├── docker-compose.yml       # Monorepo container orchestration
+├── LICENSE                  # Apache License 2.0
+├── PRIVACY.md               # Privacy Policy & Data Sovereignty
+├── TERMS.md                 # Terms & Conditions of Use
+├── SECURITY.md              # Security Policy & Vulnerability Reporting
+├── CODE_OF_CONDUCT.md       # Contributor Covenant v2.1
 └── README.md
 ```
+
+---
+
+## ⚖️ Legal & Compliance
+
+- **License:** [Apache License, Version 2.0](LICENSE) — Permissive open-source license with patent grant rights.
+- **Privacy Policy:** [PRIVACY.md](PRIVACY.md) — Local sovereignty, zero training on user code, sandboxed execution.
+- **Terms of Service:** [TERMS.md](TERMS.md) — Operational guidelines, human code review requirements, limitation of liability.
+- **Security Policy:** [SECURITY.md](SECURITY.md) — Threat model, sandbox boundary guarantees, vulnerability reporting.
+- **Code of Conduct:** [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — Contributor Covenant v2.1.
+
