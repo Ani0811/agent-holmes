@@ -72,6 +72,17 @@ npm run dev
 ```
 Frontend will be live at `http://localhost:3000`.
 
+### 4. 🐳 Or Run with Docker (1-Command Full Stack)
+
+If you prefer to run both backend, frontend, and sandboxed test environments inside Docker containers without installing local Python or Node.js runtimes:
+
+```bash
+# Ensure Docker Desktop is running, then:
+docker compose up --build
+```
+- **Web Console:** `http://localhost:3000`
+- **FastAPI Backend & Swagger Docs:** `http://localhost:8000/docs`
+
 ---
 
 ## 🎬 Live Demo: "Session Logout Bug"
@@ -152,7 +163,7 @@ agent-holmes/
 ├── frontend/
 │   ├── src/
 │   │   ├── app/             # Next.js App Router (New Case, Case View)
-│   │   ├── components/      # UI Panels: InvestigationFeed, DiffViewer, VerificationPanel, CaseReport
+│   │   ├── components/      # UI: InvestigationFeed, EvidenceBoard, DiffViewer, GitPatchModal, CaseReport
 │   │   └── lib/             # API client, WebSocket hooks, utils
 │   ├── Dockerfile
 │   └── package.json
